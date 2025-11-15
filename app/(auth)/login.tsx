@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router'; // Import router
+import { Link } from 'expo-router'; // Import router
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { supabase } from '../../src/lib/supabase'; // Import supabase
@@ -21,14 +21,14 @@ export default function LoginScreen() {
       Alert.alert('Login Error', error.message);
     } else {
       // 'replace' instead of push to prevent going back to login
-      router.replace('/(app)/home');
+      // router.replace('/(app)/home');
     }
     setLoading(false);
   }
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-white">
-    // view is same as div with flex-col from react
+    {/* view is same as div with flex-col from react */}
     <View className="flex-1 justify-center p-6 bg-white">
       {/* text is same as p or h1 tags etc */}
       <Text className="text-4xl font-bold mb-8 text-center text-blue-500">

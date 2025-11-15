@@ -25,7 +25,7 @@ export default function SignUpScreen() {
         'Account created! Please check your email to confirm.'
       );
       // Send user to the (app) home page after successful signup
-      router.replace('/(app)/home'); 
+      router.replace('/(auth)/login'); 
     }
     setLoading(false);
   }
