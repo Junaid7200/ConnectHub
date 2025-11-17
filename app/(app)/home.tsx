@@ -1,18 +1,48 @@
-import { supabase } from "@/src/lib/supabase";
-import { Pressable, Text, View } from 'react-native';
+import TweetCard from '@/src/components/(app)/TweetCard';
+import Fab from '@/src/components/Fab';
+import { supabase } from '@/src/lib/supabase';
+import { FlatList, View } from 'react-native';
 
 export default function Index() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
-  }
+  };
+
+  const tweets = Array.from({ length: 4 }).map((_, idx) => ({
+    id: `tweet-${idx}`,
+    displayName: 'Martha Craig',
+    username: 'craig_love',
+    time: '12h',
+    verified: true,
+    avatar: require('@/assets/images/project_images/p1.png'),
+    text: 'UXR/UX: You can only bring one item to a remote island to assist your research of native use of tools and usability. What do you bring? #TellMeAboutYou',
+    likedBy: ['Kieron Dotson', 'Zack John'],
+    counts: { replies: 28, retweets: 5, likes: 21, shares: 2 },
+    showThread: true,
+  }));
+
   return (
-    <View className="flex-1 justify-center items-center">
-      <Text className="text-xl font-bold">
-        This is the (App) Home Feed
-      </Text>
-      <Pressable onPress={handleLogout} className="mt-4 p-2 bg-red-500 rounded">
-        <Text>Log Out</Text>
-      </Pressable>
+    <View style={{ flex: 1 }}>
+      <FlatList
+        style={{ flex: 1 }}
+        data={tweets}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TweetCard
+            displayName={item.displayName}
+            username={item.username}
+            time={item.time}
+            verified={item.verified}
+            avatar={item.avatar}
+            text={item.text}
+            likedBy={item.likedBy}
+            counts={item.counts}
+            showThread={item.showThread}
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: 80 }}
+      />
+      <Fab />
     </View>
   );
 }

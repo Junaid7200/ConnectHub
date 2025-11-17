@@ -1,42 +1,51 @@
 import { Settings, Sparkles } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { Pressable } from 'react-native';
+import React from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 const twitterBlue = '#4C9EEB';
-const twitterBlueFaded = '#4C9EEB20'; // Blue with ~12% opacity for press-in bg
+// const twitterBlueFaded = '#4C9EEB20'; // ~12% opacity
 
-// "Gemini-like" icon for Home screen
 export const HomeHeaderRight = () => {
-  const [isPressed, setIsPressed] = useState(false);
-
   return (
+    <View style={styles.main}>
     <Pressable
-      className="mr-4 p-2 rounded-full"
-      style={{ backgroundColor: isPressed ? twitterBlueFaded : 'transparent' }}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
+      hitSlop={8}
+      style={styles.iconButton}
+      onPress={() => {
+        // TODO: open home feed filter sheet
+      }}
     >
       <Sparkles size={24} color={twitterBlue} />
     </Pressable>
+    </View>
   );
 };
 
-// Settings icon for other screens
 export const SettingsHeaderRight = () => {
-  const [isPressed, setIsPressed] = useState(false);
-
   return (
+    <View style={styles.main}>
     <Pressable
-      className="mr-4 p-2 rounded-full"
-      style={{ backgroundColor: isPressed ? twitterBlueFaded : 'transparent' }}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
+      hitSlop={8}
+      style={styles.iconButton}
+      onPress={() => {
+        // TODO: open settings sheet
+      }}
     >
       <Settings
         size={24}
         color={twitterBlue}
-        fill={isPressed ? twitterBlue : 'transparent'} // Fill on press
+        fill="none"
       />
     </Pressable>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  main: {
+    marginRight: 8,
+  },
+  iconButton: {
+    borderRadius: 999,
+  },
+});

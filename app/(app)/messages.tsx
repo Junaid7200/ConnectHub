@@ -1,9 +1,29 @@
-import { Text, View } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Fab from '@/src/components/Fab';
 
 export default function Messages() {
-    return (
-        <View className='flex-1 justify-center items-center'>
-            <Text>Messages Screen</Text>
-        </View>
-    )
+  return (
+    <View style={styles.container}>
+      <View style={styles.empty}>
+        <Text style={styles.emptyText}>Messages Screen</Text>
+      </View>
+      <Fab />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#657786',
+  },
+});
