@@ -5,7 +5,7 @@ export type NotificationTab = 'all' | 'mentions';
 
 export type AllNotification = {
   id: string;
-  avatar: ImageSourcePropType;
+  avatar?: ImageSourcePropType;
   title: string;
   body: string;
   link?: string;
@@ -29,7 +29,7 @@ export type FabProps = {
 };
 
 export type NotiAllProps = {
-  avatar: ImageSourcePropType;
+  avatar?: ImageSourcePropType;
   title: string;
   body: string;
   link?: string;
@@ -71,11 +71,17 @@ export type ProfileAvatarProps = {
 };
 
 export type MessageCardProps = {
-  avatar: ImageSourcePropType;
+  avatar?: ImageSourcePropType;
   displayName: string;
   username: string;
   date: string;
   preview: string;
+};
+
+export type SettingsHeaderProps = {
+  title: string;
+  onBack?: () => void;
+  onDone?: () => void;
 };
 
 export type SearchBarProps = {

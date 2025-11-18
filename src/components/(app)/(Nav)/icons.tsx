@@ -22,22 +22,12 @@ export const HomeHeaderRight = () => {
   );
 };
 
-export const SettingsHeaderRight = () => {
+export const SettingsHeaderRight = ({ onPress }: { onPress?: () => void }) => {
   return (
     <View style={styles.main}>
-    <Pressable
-      hitSlop={8}
-      style={styles.iconButton}
-      onPress={() => {
-        // TODO: open settings sheet
-      }}
-    >
-      <Settings
-        size={24}
-        color={twitterBlue}
-        fill="none"
-      />
-    </Pressable>
+      <Pressable hitSlop={8} style={styles.iconButton} onPress={onPress}>
+        <Settings size={24} color={twitterBlue} fill="none" />
+      </Pressable>
     </View>
   );
 };
