@@ -1,15 +1,11 @@
 import { Asset } from 'expo-asset';
 import { ChevronDown } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
-type NotiAllProps = {
-  avatar: any; // require(...) asset
-  title: string;
-  body: string;
-  link?: string;
-};
+import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import { NotiAllProps } from '@/src/types/types';
 
 export default function NotiAll({ avatar, title, body, link }: NotiAllProps) {
   const sparkUri = useMemo(
@@ -24,7 +20,7 @@ export default function NotiAll({ avatar, title, body, link }: NotiAllProps) {
 
         <View style={styles.contentColumn}>
           <View style={styles.headerRow}>
-            <Image source={avatar} style={styles.avatar} />
+            <Avatar source={avatar} name="Notification" size={38} style={styles.avatar} />
             <View style={styles.chevronWrapper}>
               <ChevronDown size={16} color="#657786" />
             </View>

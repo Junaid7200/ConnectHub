@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Fab from '@/src/components/Fab';
 import NotiAll from '@/src/components/(app)/notiAll';
 import TweetCard from '@/src/components/(app)/TweetCard';
+import Fab from '@/src/components/Fab';
+import { AllNotification, MentionNotification, NotificationTab } from '@/src/types/types';
 
-const mockAll = [
+const mockAll: AllNotification[] = [
   {
     id: '1',
     avatar: require('@/assets/images/project_images/p1.png'),
@@ -23,7 +24,7 @@ const mockAll = [
   },
 ];
 
-const mockMentions = [
+const mockMentions: MentionNotification[] = [
   {
     id: 'm1',
     displayName: 'Martha Craig',
@@ -39,43 +40,50 @@ const mockMentions = [
 ];
 
 export default function Notifications() {
-  const [tab, setTab] = useState<'all' | 'mentions'>('all');
+  const [tab, setTab] = useState<NotificationTab>('all');
   const data = tab === 'all' ? mockAll : mockMentions;
+
+  const renderItem = ({ item }: { item: AllNotification | MentionNotification }) => {
+    if (tab === 'all') {
+      const noti = item as AllNotification;
+      return <NotiAll avatar={noti.avatar} title={noti.title} body={noti.body} link={noti.link} />;
+    }
+    const mention = item as MentionNotification;
+    return (
+      <TweetCard
+        displayName={mention.displayName}
+        username={mention.username}
+        time={mention.time}
+        verified={mention.verified}
+        avatar={mention.avatar}
+        text={mention.text}
+        likedBy={mention.likedBy}
+        counts={mention.counts}
+        showThread={mention.showThread}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabsRow}>
-        <Pressable onPress={() => setTab('all')} style={styles.tab}>
-          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>All</Text>
-          {tab === 'all' && <View style={styles.tabIndicator} />}
-        </Pressable>
-        <Pressable onPress={() => setTab('mentions')} style={styles.tab}>
-          <Text style={[styles.tabText, tab === 'mentions' && styles.tabTextActive]}>Mentions</Text>
-          {tab === 'mentions' && <View style={styles.tabIndicator} />}
-        </Pressable>
+      <View style={styles.tabsWrapper}>
+        <View style={styles.tabsRow}>
+          <Pressable onPress={() => setTab('all')} style={styles.tab}>
+            <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>All</Text>
+            {tab === 'all' && <View style={styles.tabIndicator} />}
+          </Pressable>
+          <Pressable onPress={() => setTab('mentions')} style={styles.tab}>
+            <Text style={[styles.tabText, tab === 'mentions' && styles.tabTextActive]}>Mentions</Text>
+            {tab === 'mentions' && <View style={styles.tabIndicator} />}
+          </Pressable>
+        </View>
       </View>
 
       <View style={{ flex: 1 }}>
         <FlatList
           data={data}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) =>
-            tab === 'all' ? (
-              <NotiAll avatar={item.avatar} title={item.title} body={item.body} link={item.link} />
-            ) : (
-              <TweetCard
-                displayName={item.displayName}
-                username={item.username}
-                time={item.time}
-                verified={item.verified}
-                avatar={item.avatar}
-                text={item.text}
-                likedBy={item.likedBy}
-                counts={item.counts}
-                showThread={item.showThread}
-              />
-            )
-          }
+          renderItem={renderItem}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText}>
@@ -96,17 +104,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  tabsWrapper: {
+    height: 90,
+    justifyContent: 'flex-end',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#BDC5CD',
+  },
   tabsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E1E8ED',
-    paddingTop: 8,
+    alignItems: 'flex-end',
+    paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   tab: {
-    paddingVertical: 10,
+    flex: 1,
     alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#BDC5CD',
   },
   tabText: {
     fontSize: 16,
@@ -117,9 +132,9 @@ const styles = StyleSheet.create({
     color: '#4C9EEB',
   },
   tabIndicator: {
-    marginTop: 6,
+    marginTop: 8,
     height: 2,
-    width: 28,
+    width: '100%',
     backgroundColor: '#4C9EEB',
     borderRadius: 999,
   },

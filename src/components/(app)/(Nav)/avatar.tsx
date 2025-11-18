@@ -1,12 +1,16 @@
 import { Link } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  ImageSourcePropType,
+  ImageStyle,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 
-type ProfileAvatarProps = {
-  imageUrl?: string | null;
-  name?: string | null;
-  onPress?: () => void;
-  showNotificationDot?: boolean;
-};
+import { ProfileAvatarProps } from '@/src/types/types';
 
 const randomHash = (str: string): number => {
   let hash = 2166136261;
@@ -25,32 +29,71 @@ const getBackgroundColor = (name: string) => {
   return colors[hash % colors.length];
 };
 
-const FallbackAvatar = ({ name }: { name?: string | null }) => {
+const FallbackAvatar = ({
+  name,
+  size = 32,
+  style,
+  initialsSize,
+}: {
+  name?: string | null;
+  size?: number;
+  style?: ViewStyle;
+  initialsSize?: number;
+}) => {
   const initials = (name || 'U').charAt(0).toUpperCase();
   const backgroundColor = getBackgroundColor(name || 'U');
+  const fontSize = initialsSize ?? Math.max(12, size * 0.44);
 
   return (
-    <View style={[styles.avatarBase, { backgroundColor }]}>
-      <Text style={styles.initials}>{initials}</Text>
+    <View style={[styles.avatarBase, style, { backgroundColor }]}>
+      <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
     </View>
   );
 };
 
 export default function Avatar({
   imageUrl,
+  source,
   name,
   onPress,
   showNotificationDot = false,
+  href,
+  size = 32,
+  style,
 }: ProfileAvatarProps) {
+  const avatarSource: ImageSourcePropType | undefined =
+    source || (imageUrl ? { uri: imageUrl } : undefined);
+
+  const wrapperStyle: ViewStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  };
+
+  const avatarStyle: ImageStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  };
+
+  const dotSize = Math.max(6, Math.min(12, size * 0.35));
+  const dotStyle: ViewStyle = {
+    width: dotSize,
+    height: dotSize,
+    borderRadius: dotSize / 2,
+  };
+
+  const initialsSize = Math.max(12, size * 0.44);
+
   const content = (
-    <View style={styles.wrapper}>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.avatarBase} resizeMode="cover" />
+    <View style={[styles.wrapper, wrapperStyle, style]}>
+      {avatarSource ? (
+        <Image source={avatarSource} style={[styles.avatarBase, avatarStyle]} resizeMode="cover" />
       ) : (
-        <FallbackAvatar name={name} />
+        <FallbackAvatar name={name} size={size} style={avatarStyle} initialsSize={initialsSize} />
       )}
 
-      {showNotificationDot && <View style={styles.dot} />}
+      {showNotificationDot && <View style={[styles.dot, dotStyle]} />}
     </View>
   );
 
@@ -58,11 +101,15 @@ export default function Avatar({
     return <Pressable onPress={onPress}>{content}</Pressable>;
   }
 
-  return (
-    <Link href="/profile/junaid" asChild>
-      <Pressable>{content}</Pressable>
-    </Link>
-  );
+  if (href) {
+    return (
+      <Link href={href} asChild>
+        <Pressable>{content}</Pressable>
+      </Link>
+    );
+  }
+
+  return <Pressable>{content}</Pressable>;
 }
 
 const styles = StyleSheet.create({

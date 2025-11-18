@@ -2,16 +2,54 @@ import "@/app/global.css";
 import { useAppDispatch } from "@/src/hooks/useRedux";
 import { clearSession, setSession } from "@/src/store/features/auth/authSlice";
 import { store } from "@/src/store/store";
-import { Session } from '@supabase/supabase-js';
+import { Session } from "@supabase/supabase-js";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import { router, Slot } from "expo-router";
 import { useEffect, useState } from "react";
+import { Platform, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { supabase } from "../src/lib/supabase";
 
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // It's safe to ignore this in dev if the splash screen was already hidden.
+});
+
 function RootLayoutNav() {
-  const [session, setTheSession] = useState<Session | null>(null)
+  const [session, setTheSession] = useState<Session | null>(null);
+  const [fontsLoaded, fontError] = useFonts({
+    "Inter-Regular": require("../assets/fonts/Inter-Regular.ttf"),
+    "Inter-Medium": require("../assets/fonts/Inter-Medium.ttf"),
+    "Inter-SemiBold": require("../assets/fonts/Inter-SemiBold.ttf"),
+  });
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (fontError) throw fontError;
+  }, [fontError]);
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+    if (Platform.OS === "ios") {
+      // Use native SF on iOS; no global override needed.
+      SplashScreen.hideAsync();
+      return;
+    }
+
+    const defaultFontStyle = { fontFamily: "Inter-Regular" };
+    // Types for defaultProps are deprecated in RN types; cast to keep TS happy.
+    const T = Text as typeof Text & { defaultProps?: any };
+    const TI = TextInput as typeof TextInput & { defaultProps?: any };
+
+    T.defaultProps = T.defaultProps || {};
+    TI.defaultProps = TI.defaultProps || {};
+
+    T.defaultProps.style = [defaultFontStyle, T.defaultProps.style];
+    TI.defaultProps.style = [defaultFontStyle, TI.defaultProps.style];
+
+    SplashScreen.hideAsync();
+  }, [fontsLoaded]);
 
   useEffect(() => {
     // supabase.auth.getSession().then(({ data: { session } }) => {
@@ -43,6 +81,9 @@ function RootLayoutNav() {
     })
   }, [])
 
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#FFFFFF]">

@@ -1,46 +1,10 @@
+import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import { TweetCardProps } from '@/src/types/types';
 import { Asset } from 'expo-asset';
-import {
-  ChevronDown,
-  Heart,
-  MessageCircle,
-  Repeat2,
-  Upload,
-} from 'lucide-react-native';
+import { ChevronDown, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import {
-  Image,
-  ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
-
-type Engagement = {
-  replies: number;
-  retweets: number;
-  likes: number;
-  shares?: number;
-};
-
-type TweetCardProps = {
-  displayName: string;
-  username: string;
-  time: string;
-  text: string;
-  avatarUrl?: string;
-  avatar?: ImageSourcePropType; // allow local require sources
-  verified?: boolean;
-  likedBy?: string | string[];
-  retweetedBy?: string;
-  counts: Engagement;
-  showThread?: boolean;
-  onPressThread?: () => void;
-  containerStyle?: ViewStyle;
-  media?: ImageSourcePropType[]; // optional media attachments
-};
 
 // Simple helper to keep numbers short (e.g., 1200 -> 1.2K)
 const formatCount = (value: number) => {
@@ -66,17 +30,13 @@ export default function TweetCard({
   media,
 }: TweetCardProps) {
   const likedText =
-    typeof likedBy === 'string'
-      ? likedBy
-      : likedBy?.length
-        ? likedBy.join(' and ')
-        : undefined;
+    typeof likedBy === 'string' ? likedBy : likedBy?.length ? likedBy.join(' and ') : undefined;
 
-  const avatarSource: ImageSourcePropType | null = avatar
+  const avatarSource: ImageSourcePropType | undefined = avatar
     ? avatar
     : avatarUrl
       ? { uri: avatarUrl }
-      : null;
+      : undefined;
 
   const verifiedUri = useMemo(
     () => Asset.fromModule(require('@/assets/images/project_images/verified.svg')).uri,
@@ -100,19 +60,11 @@ export default function TweetCard({
 
       <View style={styles.bodyRow}>
         <View style={styles.avatarColumn}>
-          {avatarSource ? (
-            <Image source={avatarSource} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]} />
-          )}
+          <Avatar source={avatarSource} name={displayName} size={52} style={styles.avatar} />
           {showThread && (
             <>
               <View style={styles.threadLine} />
-              {avatarSource ? (
-                <Image source={avatarSource} style={styles.threadAvatar} />
-              ) : (
-                <View style={[styles.threadAvatar, styles.avatarPlaceholder]} />
-              )}
+              <Avatar source={avatarSource} name={displayName} size={34} style={styles.threadAvatar} />
             </>
           )}
         </View>
@@ -204,18 +156,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   avatarColumn: {
-    width: 58, // avatar (46) + right margin
+    width: 58, // avatar (52) + right margin
     alignItems: 'center',
+    marginRight: 8,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
     marginBottom: 8,
-    backgroundColor: '#E1E8ED',
-  },
-  avatarPlaceholder: {
-    backgroundColor: '#E1E8ED',
   },
   content: {
     flex: 1,

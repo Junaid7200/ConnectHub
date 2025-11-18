@@ -10,14 +10,8 @@ import { HomeHeaderRight, SettingsHeaderRight } from './(Nav)/icons';
 import SearchHeader from './(Nav)/SearchBar';
 
 export default function NavTab() {
-  // Placeholder user data
-  const user = {
-    name: 'Junaid',
-    imageUrl: null, // Set a URL here to test with a real image
-  };
-  const twitterLogoUri = Asset.fromModule(
-    require('@/assets/images/project_images/Twitter_Logo.svg')
-  ).uri;
+  const user = { name: 'Junaid', imageUrl: null };
+  const twitterLogoUri = Asset.fromModule(require('@/assets/images/project_images/Twitter_Logo.svg')).uri;
 
   return (
     <Tabs
@@ -28,24 +22,16 @@ export default function NavTab() {
         headerTitleContainerStyle: styles.headerTitleContainer,
         headerLeftContainerStyle: styles.headerSideContainer,
         headerRightContainerStyle: styles.headerSideContainer,
-
         headerLeft: () => (
-          <Avatar
-            imageUrl={user.imageUrl}
-            name={user.name}
-            showNotificationDot={true}
-          />
+          <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
         ),
       }}
     >
-      {/* HOME */}
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
-          headerTitle: () => (
-            <SvgUri uri={twitterLogoUri} width={28} height={28} />
-          ),
+          headerTitle: () => <SvgUri uri={twitterLogoUri} width={28} height={28} />,
           headerTitleAlign: 'center',
           headerRight: () => <HomeHeaderRight />,
           tabBarIcon: ({ color, size }): React.ReactNode => (
@@ -54,14 +40,11 @@ export default function NavTab() {
         }}
       />
 
-      {/* SEARCH */}
       <Tabs.Screen
         name="search"
         options={{
           title: 'Search',
-          headerTitle: () => (
-              <SearchHeader />
-          ),
+          headerTitle: () => <SearchHeader />,
           headerTitleAlign: 'center',
           headerRight: () => <SettingsHeaderRight />,
           tabBarIcon: ({ color, size }): React.ReactNode => (
@@ -70,7 +53,6 @@ export default function NavTab() {
         }}
       />
 
-      {/* NOTIFICATIONS */}
       <Tabs.Screen
         name="notifications"
         options={{
@@ -78,13 +60,16 @@ export default function NavTab() {
           headerTitleStyle: styles.sectionTitle,
           headerTitleAlign: 'center',
           headerRight: () => <SettingsHeaderRight />,
-          tabBarIcon: ({ color, size }): React.ReactNode => (
-            <Bell color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }): React.ReactNode => (
+            <Bell color={color} size={size} fill={focused ? color : 'none'} />
           ),
+          headerStyle: {
+            ...styles.header,
+            borderBottomColor: '#FFFFFF',
+          }
         }}
       />
 
-      {/* MESSAGES */}
       <Tabs.Screen
         name="messages"
         options={{
@@ -95,6 +80,10 @@ export default function NavTab() {
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Mail color={color} size={size} />
           ),
+          headerStyle: {
+            ...styles.header,
+            borderBottomColor: '#FFFFFF',
+          }
         }}
       />
     </Tabs>
@@ -105,7 +94,6 @@ const styles = StyleSheet.create({
   header: {
     height: 90,
     backgroundColor: '#FFFFFF',
-    shadowOpacity: 0,
     elevation: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#BDC5CD',
@@ -116,20 +104,6 @@ const styles = StyleSheet.create({
   headerSideContainer: {
     minWidth: 48,
     alignItems: 'center',
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  searchHeaderWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchHeaderTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sectionTitle: {
     fontWeight: '700',

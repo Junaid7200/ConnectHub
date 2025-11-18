@@ -9,6 +9,7 @@ export const HomeHeaderRight = () => {
   return (
     <View style={styles.main}>
     <Pressable
+    // hitSlop adds invisible padding around the pressable area so its easier to tap
       hitSlop={8}
       style={styles.iconButton}
       onPress={() => {

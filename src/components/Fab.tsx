@@ -3,11 +3,10 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
-type FabProps = {
-  onPress?: () => void;
-};
+import { FabProps } from '@/src/types/types';
 
 export default function Fab({ onPress }: FabProps) {
+  // useMemo to avoid reloading the asset on every render
   const featherUri = useMemo(
     () => Asset.fromModule(require('@/assets/images/project_images/feather.svg')).uri,
     []
@@ -33,6 +32,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4C9EEB',
     justifyContent: 'center',
     alignItems: 'center',
+    // shadowColor, opacity, radius, offset for iOS, elevation is for android
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 4,

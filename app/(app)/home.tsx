@@ -23,6 +23,9 @@ export default function Index() {
 
   return (
     <View style={{ flex: 1 }}>
+      {/* flatList gives a built-in scroller, it is basically the .map thing we do in react. 
+      it also has a keyExtracter thing for the whole "assign id to each div" in react. 
+      renderItem is a prop in it that accepts a callback and tells what to render against each item*/}
       <FlatList
         style={{ flex: 1 }}
         data={tweets}
