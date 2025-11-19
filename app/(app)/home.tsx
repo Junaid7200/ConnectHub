@@ -1,9 +1,11 @@
 import TweetCard from '@/src/components/(app)/TweetCard';
 import Fab from '@/src/components/Fab';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { FlatList, View } from 'react-native';
 
 export default function Index() {
+  const router = useRouter();
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
@@ -45,7 +47,7 @@ export default function Index() {
         )}
         contentContainerStyle={{ paddingBottom: 80 }}
       />
-      <Fab />
+      <Fab onPress={() => router.push('/(New)/NewTweet')} />
     </View>
   );
 }

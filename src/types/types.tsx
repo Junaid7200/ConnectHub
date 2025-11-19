@@ -26,6 +26,7 @@ export type MentionNotification = {
 
 export type FabProps = {
   onPress?: () => void;
+  iconSource?: number; // require() module for svg
 };
 
 export type NotiAllProps = {
@@ -82,6 +83,20 @@ export type SettingsHeaderProps = {
   title: string;
   onBack?: () => void;
   onDone?: () => void;
+};
+
+export type MessageSearchCardProps = {
+  avatar?: ImageSourcePropType;
+  displayName: string;
+  username: string;
+  verified?: boolean;
+};
+
+export type NewTweetHeaderProps = {
+  onCancel?: () => void;
+  onTweet?: () => void;
+  tweetDisabled?: boolean;
+  title?: string;
 };
 
 export type SearchBarProps = {

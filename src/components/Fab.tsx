@@ -5,17 +5,16 @@ import { SvgUri } from 'react-native-svg';
 
 import { FabProps } from '@/src/types/types';
 
-export default function Fab({ onPress }: FabProps) {
-  // useMemo to avoid reloading the asset on every render
-  const featherUri = useMemo(
-    () => Asset.fromModule(require('@/assets/images/project_images/feather.svg')).uri,
-    []
-  );
+export default function Fab({ onPress, iconSource }: FabProps) {
+  const iconUri = useMemo(() => {
+    const module = iconSource ?? require('@/assets/images/project_images/feather.svg');
+    return Asset.fromModule(module).uri;
+  }, [iconSource]);
 
   return (
     <Pressable style={styles.fab} onPress={onPress} hitSlop={8}>
       <View style={styles.iconWrapper}>
-        <SvgUri uri={featherUri} width={28} height={28} />
+        <SvgUri uri={iconUri} width={28} height={28} />
       </View>
     </Pressable>
   );

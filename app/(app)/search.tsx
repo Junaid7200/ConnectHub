@@ -1,5 +1,6 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import Fab from '@/src/components/Fab';
 
 const emptyState = {
@@ -18,6 +19,7 @@ const mockTrends = [
 ];
 
 export default function Search() {
+  const router = useRouter();
   const trends = mockTrends; // swap to [] to see the empty state
 
   const renderTrend = ({ item }: { item: typeof mockTrends[number] }) => (
@@ -54,7 +56,7 @@ export default function Search() {
         contentContainerStyle={styles.listContent}
         ListFooterComponent={<View style={{ height: 32 }} />}
       />
-      <Fab />
+      <Fab onPress={() => router.push('/(New)/NewTweet')} />
     </View>
   );
 }

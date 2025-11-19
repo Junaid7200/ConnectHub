@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import NotiAll from '@/src/components/(app)/notiAll';
 import TweetCard from '@/src/components/(app)/TweetCard';
@@ -40,6 +41,7 @@ const mockMentions: MentionNotification[] = [
 ];
 
 export default function Notifications() {
+  const router = useRouter();
   const [tab, setTab] = useState<NotificationTab>('all');
   const data = tab === 'all' ? mockAll : mockMentions;
 
@@ -93,7 +95,7 @@ export default function Notifications() {
           }
           contentContainerStyle={{ paddingBottom: 80 }}
         />
-        <Fab />
+        <Fab onPress={() => router.push('/(New)/NewTweet')} />
       </View>
     </View>
   );

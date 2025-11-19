@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
@@ -5,6 +6,8 @@ import MsgCard from '@/src/components/(app)/(msgs)/msgCard';
 import MessagesSearchBar from '@/src/components/(app)/(msgs)/search';
 import Fab from '@/src/components/Fab';
 import { MessageCardProps } from '@/src/types/types';
+
+
 
 const mockMessages: MessageCardProps[] = [
   {
@@ -45,6 +48,7 @@ const mockMessages: MessageCardProps[] = [
 ];
 
 export default function Messages() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <View style={styles.searchWrapper}>
@@ -56,7 +60,10 @@ export default function Messages() {
         renderItem={({ item }) => <MsgCard {...item} />}
         contentContainerStyle={styles.listContent}
       />
-      <Fab />
+      <Fab
+        iconSource={require('@/assets/images/project_images/newMessage.svg')}
+        onPress={() => router.push('/(New)/newMsg')}
+      />
     </View>
   );
 }
