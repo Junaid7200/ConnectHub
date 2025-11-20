@@ -1,14 +1,14 @@
 import { Asset } from 'expo-asset';
 import { Tabs, usePathname, useRouter } from 'expo-router';
-import { Bell, Home, Mail, Search } from 'lucide-react-native';
+import { Bell, ChevronLeft, Home, Mail, Search } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
+import { useDrawer } from '../Drawer';
 import Avatar from './(Nav)/avatar';
 import { HomeHeaderRight, SettingsHeaderRight } from './(Nav)/icons';
 import SearchHeader from './(Nav)/SearchBar';
-import { useDrawer } from '../Drawer';
 
 export default function NavTab() {
   const router = useRouter();
@@ -16,6 +16,13 @@ export default function NavTab() {
   const { openDrawer } = useDrawer();
   const user = { name: 'Junaid', imageUrl: null };
   const twitterLogoUri = Asset.fromModule(require('@/assets/images/project_images/Twitter_Logo.svg')).uri;
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
 
   return (
     <Tabs
@@ -102,6 +109,30 @@ export default function NavTab() {
           }
         }}
       />
+
+      <Tabs.Screen
+        name="lists"
+        options={{
+          href: null,
+          title: 'Lists',
+          headerTitle: 'Lists',
+          headerTitleAlign: 'center',
+          headerLeft: () => (
+            <Pressable hitSlop={8} style={styles.backButton} onPress={handleBack}>
+              <ChevronLeft size={22} color="#4C9EEB" />
+            </Pressable>
+          ),
+          headerRight: () => null,
+          headerShadowVisible: false,
+          headerStyle: {
+            ...styles.header,
+            borderBottomWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            shadowColor: 'transparent',
+          },
+        }}
+      />
     </Tabs>
   );
 }
@@ -123,6 +154,9 @@ const styles = StyleSheet.create({
   },
   avatarHitbox: {
     padding: 10,
+  },
+  backButton: {
+    marginLeft: 10,
   },
   sectionTitle: {
     fontWeight: '700',

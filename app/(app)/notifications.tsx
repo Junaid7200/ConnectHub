@@ -108,23 +108,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   tabsWrapper: {
-    height: 90,
+    paddingHorizontal: 0,
+    paddingBottom: 0,
     justifyContent: 'flex-end',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#BDC5CD',
+    backgroundColor: '#FFFFFF',
   },
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 0,
-    paddingBottom: 12,
+    paddingBottom: 0,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#BDC5CD',
+    paddingVertical: 12,
   },
   tabText: {
     fontSize: 16,
@@ -135,7 +133,7 @@ const styles = StyleSheet.create({
     color: '#4C9EEB',
   },
   tabIndicator: {
-    marginTop: 8,
+    marginTop: 6,
     height: 2,
     width: '100%',
     backgroundColor: '#4C9EEB',

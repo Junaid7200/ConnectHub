@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SvgUri } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 
 import Avatar from '@/src/components/(app)/(Nav)/avatar';
 
@@ -95,6 +96,8 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
 }
 
 function DrawerContent() {
+  const router = useRouter();
+  const { closeDrawer } = useDrawer();
   const bulbUri = Asset.fromModule(require('@/assets/images/project_images/bulb.svg')).uri;
   const qrUri = Asset.fromModule(require('@/assets/images/project_images/QRCode.svg')).uri;
   const profileUri = Asset.fromModule(require('@/assets/images/project_images/Drawer/profile.svg')).uri;
@@ -129,10 +132,16 @@ function DrawerContent() {
           <SvgUri uri={profileUri} width={24} height={24} />
           <Text style={styles.menuLabel}>Profile</Text>
         </View>
-        <View style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => {
+            router.push('/(app)/lists');
+            closeDrawer();
+          }}
+        >
           <SvgUri uri={listsUri} width={24} height={24} />
           <Text style={styles.menuLabel}>Lists</Text>
-        </View>
+        </Pressable>
         <View style={styles.menuRow}>
           <SvgUri uri={topicsUri} width={24} height={24} />
           <Text style={styles.menuLabel}>Topics</Text>

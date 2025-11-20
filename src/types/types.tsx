@@ -107,3 +107,15 @@ export type SearchBarProps = {
   showFocusBorder?: boolean;
   style?: ViewStyle;
 };
+
+export type ListTab = 'subscribed' | 'member';
+
+export type ListItem = {
+  id: string;
+  owner: string;
+  name: string;
+  description?: string;
+  members: number;
+  subscribers?: number;
+  avatar?: ImageSourcePropType;
+};
