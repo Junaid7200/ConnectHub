@@ -128,10 +128,16 @@ function DrawerContent() {
       </View>
 
       <View style={styles.menu}>
-        <View style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => {
+            router.push('/(app)/profile');
+            closeDrawer();
+          }}
+        >
           <SvgUri uri={profileUri} width={24} height={24} />
           <Text style={styles.menuLabel}>Profile</Text>
-        </View>
+        </Pressable>
         <Pressable
           style={styles.menuRow}
           onPress={() => {

@@ -44,6 +44,7 @@ export type Engagement = {
 };
 
 export type TweetCardProps = {
+  id?: string;
   displayName: string;
   username: string;
   time: string;
@@ -58,6 +59,11 @@ export type TweetCardProps = {
   onPressThread?: () => void;
   containerStyle?: ViewStyle;
   media?: ImageSourcePropType[];
+  isOwnTweet?: boolean;
+  onPressComment?: () => void;
+  hideEngagement?: boolean;
+  onSharePress?: () => void;
+  onLikeToggle?: (liked: boolean) => void;
 };
 
 export type ProfileAvatarProps = {

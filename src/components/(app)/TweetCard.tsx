@@ -5,6 +5,7 @@ import { ChevronDown, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react
 import React, { useCallback, useMemo, useState } from 'react';
 import { Image, ImageSourcePropType, Linking, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 
 // Simple helper to keep numbers short (e.g., 1200 -> 1.2K)
 const formatCount = (value: number) => {
@@ -31,9 +32,15 @@ export default function TweetCard({
   onPressThread,
   containerStyle,
   media,
+  isOwnTweet,
+  onPressComment,
+  hideEngagement,
+  onSharePress,
+  onLikeToggle,
 }: TweetCardProps) {
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
   const [liked, setLiked] = useState(false);
+  const router = useRouter();
 
   const likedText =
     typeof likedBy === 'string' ? likedBy : likedBy?.length ? likedBy.join(' and ') : undefined;
@@ -146,30 +153,50 @@ export default function TweetCard({
               </View>
             ) : null}
 
-            <View style={styles.engagementRow}>
-              <EngagementItem icon={<MessageCircle size={18} color="#657786" />} count={counts.replies} />
-              <EngagementItem
-                icon={<Repeat2 size={18} color="#657786" />}
-                count={counts.retweets}
-                onPress={() => setShowRetweetSheet(true)}
-              />
-              <EngagementItem
-                icon={<Heart size={18} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />}
-                count={counts.likes + (liked ? 1 : 0)}
-                onPress={() => setLiked((prev) => !prev)}
-              />
-              <EngagementItem
-                icon={<Upload size={18} color="#657786" />}
-                count={counts.shares ?? 0}
-                onPress={async () => {
-                  try {
-                    await Share.share({ message: text });
-                  } catch {
-                    // no-op
+            {!hideEngagement && (
+              <View style={styles.engagementRow}>
+                <EngagementItem
+                  icon={<MessageCircle size={18} color="#657786" />}
+                  count={counts.replies}
+                  onPress={
+                    onPressComment
+                      ? onPressComment
+                      : () => router.push(isOwnTweet ? '/(app)/tweet-mine' : '/(app)/tweet-detail')
                   }
-                }}
-              />
-            </View>
+                />
+                <EngagementItem
+                  icon={<Repeat2 size={18} color="#657786" />}
+                  count={counts.retweets}
+                  onPress={() => setShowRetweetSheet(true)}
+                />
+                <EngagementItem
+                  icon={<Heart size={18} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />}
+                  count={counts.likes + (liked ? 1 : 0)}
+                  onPress={() => {
+                    setLiked((prev) => {
+                      const next = !prev;
+                      onLikeToggle?.(next);
+                      return next;
+                    });
+                  }}
+                />
+                <EngagementItem
+                  icon={<Upload size={18} color="#657786" />}
+                  count={counts.shares ?? 0}
+                  onPress={
+                    onSharePress
+                      ? onSharePress
+                      : async () => {
+                        try {
+                          await Share.share({ message: text });
+                        } catch {
+                          // no-op
+                        }
+                      }
+                  }
+                />
+              </View>
+            )}
 
             {showThread && (
               <Pressable onPress={onPressThread} style={styles.threadLinkWrapper}>

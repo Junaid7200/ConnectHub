@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 import { Asset } from 'expo-asset';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const mediaThumbs = [
   require('@/assets/images/project_images/MediaToolBar/Media.png'),
@@ -26,11 +27,15 @@ const uri = (mod: number) => Asset.fromModule(mod).uri;
 export default function MediaToolBar() {
   const [visible, setVisible] = useState(false);
   const [kbHeight, setKbHeight] = useState(0);
+  const insets = useSafeAreaInsets();
+  const maxKeyboardHeight = Dimensions.get('window').height * 0.7;
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      const height = e?.endCoordinates?.height ?? 0;
+      const clamped = Math.max(0, Math.min(height, maxKeyboardHeight) - insets.bottom);
+      setKbHeight(clamped);
       setVisible(true);
-      setKbHeight(e.endCoordinates.height);
     });
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setVisible(false);

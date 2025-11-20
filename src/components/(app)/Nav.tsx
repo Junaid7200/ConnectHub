@@ -2,13 +2,36 @@ import { Asset } from 'expo-asset';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Bell, ChevronLeft, Home, Mail, Search } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
 import { useDrawer } from '../Drawer';
 import Avatar from './(Nav)/avatar';
 import { HomeHeaderRight, SettingsHeaderRight } from './(Nav)/icons';
 import SearchHeader from './(Nav)/SearchBar';
+
+function CustomHeader({
+  title,
+  right,
+  left,
+  borderColor = '#BDC5CD',
+}: {
+  title: React.ReactNode;
+  right?: React.ReactNode;
+  left?: React.ReactNode;
+  borderColor?: string;
+}) {
+  return (
+    <View style={[styles.customHeader, { borderBottomColor: borderColor }]}>
+      <View style={styles.customHeaderTopPad} />
+      <View style={styles.customHeaderRow}>
+        <View style={styles.customHeaderSide}>{left}</View>
+        <View style={styles.customHeaderCenter}>{title}</View>
+        <View style={styles.customHeaderSide}>{right}</View>
+      </View>
+    </View>
+  );
+}
 
 export default function NavTab() {
   const router = useRouter();
@@ -29,28 +52,28 @@ export default function NavTab() {
       screenOptions={{
         tabBarActiveTintColor: '#4C9EEB',
         tabBarShowLabel: false,
-        headerStyle: styles.header,
-        headerTitleContainerStyle: styles.headerTitleContainer,
-        headerLeftContainerStyle: styles.headerSideContainer,
-        headerRightContainerStyle: styles.headerSideContainer,
-        headerLeft: () => (
-          <Pressable
-            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-            onPress={openDrawer}
-            style={styles.avatarHitbox}
-          >
-            <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
-          </Pressable>
-        ),
+        headerShown: true,
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
-          headerTitle: () => <SvgUri uri={twitterLogoUri} width={28} height={28} />,
-          headerTitleAlign: 'center',
-          headerRight: () => <HomeHeaderRight />,
+          header: () => (
+            <CustomHeader
+              left={
+                <Pressable
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                  onPress={openDrawer}
+                  style={styles.avatarHitbox}
+                >
+                  <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+                </Pressable>
+              }
+              title={<SvgUri uri={twitterLogoUri} width={28} height={28} />}
+              right={<HomeHeaderRight />}
+            />
+          ),
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Home color={color} size={size} />
           ),
@@ -61,10 +84,24 @@ export default function NavTab() {
         name="search"
         options={{
           title: 'Search',
-          headerTitle: () => <SearchHeader />,
-          headerTitleAlign: 'center',
-          headerRight: () => (
-            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/search', params: { from: pathname } })} />
+          header: () => (
+            <CustomHeader
+              left={
+                <Pressable
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                  onPress={openDrawer}
+                  style={styles.avatarHitbox}
+                >
+                  <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+                </Pressable>
+              }
+              title={<SearchHeader />}
+              right={
+                <SettingsHeaderRight
+                  onPress={() => router.push({ pathname: '/(settings)/search', params: { from: pathname } })}
+                />
+              }
+            />
           ),
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Search color={color} size={size} />
@@ -76,18 +113,29 @@ export default function NavTab() {
         name="notifications"
         options={{
           title: 'Notifications',
-          headerTitleStyle: styles.sectionTitle,
-          headerTitleAlign: 'center',
-          headerRight: () => (
-            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/notifications', params: { from: pathname } })} />
+          header: () => (
+            <CustomHeader
+              left={
+                <Pressable
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                  onPress={openDrawer}
+                  style={styles.avatarHitbox}
+                >
+                  <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+                </Pressable>
+              }
+              title={<Text style={styles.sectionTitle}>Notifications</Text>}
+              right={
+                <SettingsHeaderRight
+                  onPress={() => router.push({ pathname: '/(settings)/notifications', params: { from: pathname } })}
+                />
+              }
+              borderColor="transparent"
+            />
           ),
           tabBarIcon: ({ color, size, focused }): React.ReactNode => (
             <Bell color={color} size={size} fill={focused ? color : 'none'} />
           ),
-          headerStyle: {
-            ...styles.header,
-            borderBottomColor: '#FFFFFF',
-          }
         }}
       />
 
@@ -95,18 +143,29 @@ export default function NavTab() {
         name="messages"
         options={{
           title: 'Messages',
-          headerTitleStyle: styles.sectionTitle,
-          headerTitleAlign: 'center',
-          headerRight: () => (
-            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/messages', params: { from: pathname } })} />
+          header: () => (
+            <CustomHeader
+              left={
+                <Pressable
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                  onPress={openDrawer}
+                  style={styles.avatarHitbox}
+                >
+                  <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+                </Pressable>
+              }
+              title={<Text style={styles.sectionTitle}>Messages</Text>}
+              right={
+                <SettingsHeaderRight
+                  onPress={() => router.push({ pathname: '/(settings)/messages', params: { from: pathname } })}
+                />
+              }
+              borderColor="transparent"
+            />
           ),
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Mail color={color} size={size} />
           ),
-          headerStyle: {
-            ...styles.header,
-            borderBottomColor: '#FFFFFF',
-          }
         }}
       />
 
@@ -125,7 +184,7 @@ export default function NavTab() {
           headerRight: () => null,
           headerShadowVisible: false,
           headerStyle: {
-            ...styles.header,
+            backgroundColor: '#FFFFFF',
             borderBottomWidth: 0,
             elevation: 0,
             shadowOpacity: 0,
@@ -133,25 +192,35 @@ export default function NavTab() {
           },
         }}
       />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
+
+      <Tabs.Screen
+        name="tweet-mine"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
+
+      <Tabs.Screen
+        name="tweet-detail"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 90,
-    backgroundColor: '#FFFFFF',
-    elevation: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#BDC5CD',
-  },
-  headerTitleContainer: {
-    paddingVertical: 0,
-  },
-  headerSideContainer: {
-    minWidth: 48,
-    alignItems: 'center',
-  },
   avatarHitbox: {
     padding: 10,
   },
@@ -161,5 +230,29 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontWeight: '700',
     fontSize: 18,
+  },
+  customHeader: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#BDC5CD',
+  },
+  customHeaderTopPad: {
+    height: 60,
+  },
+  customHeaderRow: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  customHeaderSide: {
+    width: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

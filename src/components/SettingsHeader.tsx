@@ -1,6 +1,6 @@
+import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
 
 import { SettingsHeaderProps } from '@/src/types/types';
 
@@ -21,6 +21,7 @@ export default function SettingsHeader({ title, onBack, onDone }: SettingsHeader
 const styles = StyleSheet.create({
   container: {
     height: 90,
+    paddingTop: 40,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#BDC5CD',

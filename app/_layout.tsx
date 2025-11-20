@@ -1,17 +1,16 @@
 import "@/app/global.css";
+import { DrawerProvider } from "@/src/components/Drawer";
 import { useAppDispatch } from "@/src/hooks/useRedux";
 import { clearSession, setSession } from "@/src/store/features/auth/authSlice";
 import { store } from "@/src/store/store";
 import { Session } from "@supabase/supabase-js";
 import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
 import { Stack, router } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { Platform, Text, TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { supabase } from "../src/lib/supabase";
-import { DrawerProvider } from "@/src/components/Drawer";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // It's safe to ignore this in dev if the splash screen was already hidden.
@@ -87,13 +86,13 @@ function RootLayoutNav() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFFFFF]">
+    // <SafeAreaView className="flex-1 bg-[#FFFFFF]">
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
         <Stack.Screen name="(settings)" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="(New)" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
-    </SafeAreaView>
+    // </SafeAreaView>
   )
 }
 

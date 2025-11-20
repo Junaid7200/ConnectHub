@@ -21,6 +21,7 @@ export default function Index() {
     likedBy: ['Kieron Dotson', 'Zack John'],
     counts: { replies: 28, retweets: 5, likes: 21, shares: 2 },
     showThread: true,
+    isOwnTweet: idx === 0,
   }));
 
   return (
@@ -43,6 +44,7 @@ export default function Index() {
             likedBy={item.likedBy}
             counts={item.counts}
             showThread={item.showThread}
+            isOwnTweet={item.isOwnTweet}
           />
         )}
         contentContainerStyle={{ paddingBottom: 80 }}
