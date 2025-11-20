@@ -2,15 +2,17 @@ import { Asset } from 'expo-asset';
 import { Tabs, useRouter } from 'expo-router';
 import { Bell, Home, Mail, Search } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
 import Avatar from './(Nav)/avatar';
 import { HomeHeaderRight, SettingsHeaderRight } from './(Nav)/icons';
 import SearchHeader from './(Nav)/SearchBar';
+import { useDrawer } from '../Drawer';
 
 export default function NavTab() {
   const router = useRouter();
+  const { openDrawer } = useDrawer();
   const user = { name: 'Junaid', imageUrl: null };
   const twitterLogoUri = Asset.fromModule(require('@/assets/images/project_images/Twitter_Logo.svg')).uri;
 
@@ -24,7 +26,13 @@ export default function NavTab() {
         headerLeftContainerStyle: styles.headerSideContainer,
         headerRightContainerStyle: styles.headerSideContainer,
         headerLeft: () => (
-          <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+          <Pressable
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+            onPress={openDrawer}
+            style={styles.avatarHitbox}
+          >
+            <Avatar imageUrl={user.imageUrl} name={user.name} showNotificationDot />
+          </Pressable>
         ),
       }}
     >
@@ -105,6 +113,9 @@ const styles = StyleSheet.create({
   headerSideContainer: {
     minWidth: 48,
     alignItems: 'center',
+  },
+  avatarHitbox: {
+    padding: 10,
   },
   sectionTitle: {
     fontWeight: '700',

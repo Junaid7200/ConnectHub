@@ -11,6 +11,7 @@ import { Platform, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { supabase } from "../src/lib/supabase";
+import { DrawerProvider } from "@/src/components/Drawer";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // It's safe to ignore this in dev if the splash screen was already hidden.
@@ -96,7 +97,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <RootLayoutNav />
+      <DrawerProvider>
+        <RootLayoutNav />
+      </DrawerProvider>
     </Provider>
   );
 }
