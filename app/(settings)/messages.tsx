@@ -40,9 +40,17 @@ export default function MessageSettings() {
     }, {})
   );
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <SettingsHeader title="Messages settings" onBack={() => router.back()} onDone={() => router.back()} />
+      <SettingsHeader title="Messages settings" onBack={goBack} onDone={goBack} />
       <View style={styles.privacyHeader}>
         <Text style={styles.privacyText}>Privacy</Text>
       </View>

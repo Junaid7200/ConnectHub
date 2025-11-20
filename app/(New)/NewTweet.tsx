@@ -10,6 +10,14 @@ export default function NewTweet() {
   const router = useRouter();
   const [text, setText] = useState('');
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -17,8 +25,8 @@ export default function NewTweet() {
       keyboardVerticalOffset={0}
     >
       <NewTweetHeader
-        onCancel={() => router.back()}
-        onTweet={() => router.back()}
+        onCancel={goBack}
+        onTweet={goBack}
         tweetDisabled={!text.trim()}
         title="New Tweet"
       />

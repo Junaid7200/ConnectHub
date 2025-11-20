@@ -164,14 +164,6 @@ function DrawerContent() {
   );
 }
 
-const menuItems = [
-  { label: 'Profile' },
-  { label: 'Lists' },
-  { label: 'Topics' },
-  { label: 'Bookmarks' },
-  { label: 'Moments' },
-];
-
 const styles = StyleSheet.create({
   drawer: {
     position: 'absolute',

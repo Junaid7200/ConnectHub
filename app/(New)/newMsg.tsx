@@ -20,9 +20,16 @@ const contacts: MessageSearchCardProps[] = [
 
 export default function NewMessage() {
   const router = useRouter();
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
   return (
     <View style={styles.container}>
-      <SettingsHeader title="New message" onBack={() => router.back()} onDone={() => router.back()} />
+      <SettingsHeader title="New message" onBack={goBack} onDone={goBack} />
       <FlatSearchBar />
       <FlatList
         data={contacts}

@@ -40,9 +40,17 @@ export default function NotificationSettings() {
     }, {})
   );
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <SettingsHeader title="Notification settings" onBack={() => router.back()} onDone={() => router.back()} />
+      <SettingsHeader title="Notification settings" onBack={goBack} onDone={goBack} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionText}>Notifications</Text>
       </View>

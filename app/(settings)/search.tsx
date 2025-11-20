@@ -34,9 +34,17 @@ export default function SearchSettings() {
     }, {})
   );
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/home');
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <SettingsHeader title="Search settings" onBack={() => router.back()} onDone={() => router.back()} />
+      <SettingsHeader title="Search settings" onBack={goBack} onDone={goBack} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionText}>Search</Text>
       </View>

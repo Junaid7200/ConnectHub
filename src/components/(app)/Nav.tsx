@@ -1,5 +1,5 @@
 import { Asset } from 'expo-asset';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Bell, Home, Mail, Search } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -12,6 +12,7 @@ import { useDrawer } from '../Drawer';
 
 export default function NavTab() {
   const router = useRouter();
+  const pathname = usePathname();
   const { openDrawer } = useDrawer();
   const user = { name: 'Junaid', imageUrl: null };
   const twitterLogoUri = Asset.fromModule(require('@/assets/images/project_images/Twitter_Logo.svg')).uri;
@@ -55,7 +56,9 @@ export default function NavTab() {
           title: 'Search',
           headerTitle: () => <SearchHeader />,
           headerTitleAlign: 'center',
-          headerRight: () => <SettingsHeaderRight onPress={() => router.push('/(settings)/search')} />,
+          headerRight: () => (
+            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/search', params: { from: pathname } })} />
+          ),
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Search color={color} size={size} />
           ),
@@ -68,7 +71,9 @@ export default function NavTab() {
           title: 'Notifications',
           headerTitleStyle: styles.sectionTitle,
           headerTitleAlign: 'center',
-          headerRight: () => <SettingsHeaderRight onPress={() => router.push('/(settings)/notifications')} />,
+          headerRight: () => (
+            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/notifications', params: { from: pathname } })} />
+          ),
           tabBarIcon: ({ color, size, focused }): React.ReactNode => (
             <Bell color={color} size={size} fill={focused ? color : 'none'} />
           ),
@@ -85,7 +90,9 @@ export default function NavTab() {
           title: 'Messages',
           headerTitleStyle: styles.sectionTitle,
           headerTitleAlign: 'center',
-          headerRight: () => <SettingsHeaderRight onPress={() => router.push('/(settings)/messages')} />,
+          headerRight: () => (
+            <SettingsHeaderRight onPress={() => router.push({ pathname: '/(settings)/messages', params: { from: pathname } })} />
+          ),
           tabBarIcon: ({ color, size }): React.ReactNode => (
             <Mail color={color} size={size} />
           ),

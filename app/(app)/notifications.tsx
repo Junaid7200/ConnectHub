@@ -42,6 +42,7 @@ const mockMentions: MentionNotification[] = [
 
 export default function Notifications() {
   const router = useRouter();
+  const pathname = useRouter();
   const [tab, setTab] = useState<NotificationTab>('all');
   const data = tab === 'all' ? mockAll : mockMentions;
 

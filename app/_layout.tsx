@@ -5,7 +5,7 @@ import { store } from "@/src/store/store";
 import { Session } from "@supabase/supabase-js";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { router, Slot } from "expo-router";
+import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -88,7 +88,11 @@ function RootLayoutNav() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#FFFFFF]">
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+        <Stack.Screen name="(settings)" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="(New)" options={{ headerShown: false, presentation: 'modal' }} />
+      </Stack>
     </SafeAreaView>
   )
 }
