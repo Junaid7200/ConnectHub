@@ -1,12 +1,12 @@
 import Avatar from '@/src/components/(app)/(Nav)/avatar';
 import TweetCard from '@/src/components/(app)/TweetCard';
 import { TweetCardProps } from '@/src/types/types';
+import { Asset } from 'expo-asset';
 import { useRouter } from 'expo-router';
 import { BarChart3, ChevronLeft, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
-import { Asset } from 'expo-asset';
 
 const mainTweet: TweetCardProps = {
   displayName: 'Pixsellz',
@@ -117,9 +117,13 @@ export default function TweetMineScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#FFFFFF',
+    paddingTop: 40
+  },
   header: {
-    height: 60,
+    height: 90,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,

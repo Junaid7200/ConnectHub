@@ -1,6 +1,6 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
 
 import Avatar from '@/src/components/(app)/(Nav)/avatar';
 import MediaToolBar from '@/src/components/(app)/MediaToolBar';
@@ -21,8 +21,8 @@ export default function NewTweet() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
     >
       <NewTweetHeader
         onCancel={goBack}

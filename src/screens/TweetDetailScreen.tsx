@@ -135,9 +135,13 @@ export default function TweetDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { 
+  flex: 1, 
+  backgroundColor: '#FFFFFF',
+  paddingTop: 40
+  },
   header: {
-    height: 60,
+    height: 90,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,

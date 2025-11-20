@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 import { Asset } from 'expo-asset';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,31 +26,20 @@ const uri = (mod: number) => Asset.fromModule(mod).uri;
 
 export default function MediaToolBar() {
   const [visible, setVisible] = useState(false);
-  const [kbHeight, setKbHeight] = useState(0);
   const insets = useSafeAreaInsets();
-  const maxKeyboardHeight = Dimensions.get('window').height * 0.7;
-
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-      const height = e?.endCoordinates?.height ?? 0;
-      const clamped = Math.max(0, Math.min(height, maxKeyboardHeight) - insets.bottom);
-      setKbHeight(clamped);
-      setVisible(true);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setVisible(false);
-      setKbHeight(0);
-    });
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setVisible(false));
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [insets.bottom]);
 
   if (!visible) return null;
 
   return (
-    <View style={[styles.wrapper, { bottom: kbHeight }]}>
+    <View style={[styles.wrapper, { bottom: insets.bottom }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaRow}>
         <View style={styles.cameraThumb}>
           <SvgUri uri={uri(icons.camera)} width={28} height={28} />

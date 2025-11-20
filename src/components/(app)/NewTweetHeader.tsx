@@ -30,6 +30,7 @@ export default function NewTweetHeader({
 const styles = StyleSheet.create({
   container: {
     height: 90,
+    paddingTop: 40,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
