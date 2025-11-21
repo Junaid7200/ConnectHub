@@ -5,12 +5,12 @@ import {
   Animated,
   Dimensions,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 
@@ -163,7 +163,9 @@ function DrawerContent() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionText}>Settings and privacy</Text>
+        <Pressable onPress={() => { router.push('/(settings)/settingsPrivacy'); closeDrawer(); }}>
+          <Text style={styles.sectionText}>Settings and privacy</Text>
+        </Pressable>
         <Text style={[styles.sectionText, { marginTop: 8 }]}>Help Center</Text>
       </View>
 

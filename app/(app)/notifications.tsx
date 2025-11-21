@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import NotiAll from '@/src/components/(app)/notiAll';
 import TweetCard from '@/src/components/(app)/TweetCard';
@@ -42,9 +43,16 @@ const mockMentions: MentionNotification[] = [
 
 export default function Notifications() {
   const router = useRouter();
-  const pathname = useRouter();
   const [tab, setTab] = useState<NotificationTab>('all');
+  const listRef = useRef<FlatList>(null);
   const data = tab === 'all' ? mockAll : mockMentions;
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setTab('all');
+      listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    }, [])
+  );
 
   const renderItem = ({ item }: { item: AllNotification | MentionNotification }) => {
     if (tab === 'all') {
@@ -84,6 +92,7 @@ export default function Notifications() {
 
       <View style={{ flex: 1 }}>
         <FlatList
+          ref={listRef}
           data={data}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}

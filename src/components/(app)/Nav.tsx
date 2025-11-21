@@ -202,14 +202,6 @@ export default function NavTab() {
       />
 
       <Tabs.Screen
-        name="tweet-mine"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
-
-      <Tabs.Screen
         name="tweet-detail"
         options={{
           href: null,

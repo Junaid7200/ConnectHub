@@ -2,16 +2,22 @@ import Avatar from '@/src/components/(app)/(Nav)/avatar';
 import TweetCard from '@/src/components/(app)/TweetCard';
 import Fab from '@/src/components/Fab';
 import { TweetCardProps } from '@/src/types/types';
+import { useFocusEffect } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
 
 const profileAvatar = require('@/assets/images/project_images/p1.png');
+
+
+const localVideoUri = Asset.fromModule(
+  require('@/assets/images/project_videos/video.mp4')
+).uri;
 
 const tweets: (TweetCardProps & { pinned?: boolean })[] = [
   {
@@ -22,8 +28,23 @@ const tweets: (TweetCardProps & { pinned?: boolean })[] = [
     time: '7/31/19',
     text: 'Scheme Constructor - your ultimate prototyping kit for all UX web and mobile app design! constructor.pixsellz.io',
     counts: { replies: 2, retweets: 12, likes: 15, shares: 1 },
-    media: [require('@/assets/images/project_images/MediaToolBar/Media.png')],
+    media: [{ type: 'image', source: require('@/assets/images/project_images/MediaToolBar/Media.png') }],
   },
+  {
+  id: 'video-1',
+  displayName: 'Pixsellz',
+  username: 'pixsellz',
+  time: '1h',
+  text: 'Check this out',
+  counts: { replies: 2, retweets: 1, likes: 5, shares: 0 },
+  media: [
+    {
+      type: 'video',
+      source: { uri: localVideoUri },
+      // poster: require('@/assets/images/project_images/MediaToolBar/Media.png'), // optional
+    },
+  ],
+},
   {
     id: 'reply1',
     displayName: 'Pixsellz',
@@ -34,14 +55,45 @@ const tweets: (TweetCardProps & { pinned?: boolean })[] = [
   },
 ];
 
+const tweetsReplies: (TweetCardProps & { pinned?: boolean })[] = tweets.map((t, idx) => ({
+  ...t,
+  id: `${t.id}-reply-${idx}`,
+  text: idx === 0 ? `${t.text}\nReplying to someone` : t.text,
+}));
+
+const mediaTweets: (TweetCardProps & { pinned?: boolean })[] = tweets.map((t, idx) => ({
+  ...t,
+  id: `${t.id}-media-${idx}`,
+  media: [{ type: 'image', source: require('@/assets/images/project_images/MediaToolBar/Media(2).png') }],
+}));
+
+const likedTweets: TweetCardProps[] = [
+  {
+    id: 'liked-1',
+    displayName: 'Another User',
+    username: 'another',
+    time: '5h',
+    text: 'Liked tweet example with no media',
+    counts: { replies: 4, retweets: 1, likes: 12, shares: 1 },
+  },
+];
+
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listRef = useRef<FlatList>(null);
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const linkUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/Profile/Link.svg')).uri, []);
   const calendarUri = useMemo(
     () => Asset.fromModule(require('@/assets/images/project_images/Profile/Calendar.svg')).uri,
     []
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveTab('tweets');
+      listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    }, [])
   );
   const pinUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/Profile/Pin.svg')).uri, []);
   const renderHeader = () => (
@@ -107,12 +159,20 @@ export default function ProfileScreen() {
     </View>
   );
 
-  const data = activeTab === 'tweets' ? tweets : [];
+  const data =
+    activeTab === 'tweets'
+      ? tweets
+      : activeTab === 'replies'
+        ? tweetsReplies
+        : activeTab === 'media'
+          ? mediaTweets
+          : likedTweets;
 
   return (
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" style="light" />
       <FlatList
+        ref={listRef}
         data={data}
         keyExtractor={(item) => item.id as string}
         renderItem={({ item }) => (
@@ -123,7 +183,7 @@ export default function ProfileScreen() {
                 <Text style={styles.pinnedLabel}>Pinned Tweet</Text>
               </View>
             )}
-            <TweetCard {...item} hideEngagement={false} />
+            <TweetCard {...item} hideEngagement={false} isOwnTweet={activeTab !== 'likes'} showActivityIcon={activeTab !== 'likes'} />
           </View>
         )}
         ListHeaderComponent={renderHeader}

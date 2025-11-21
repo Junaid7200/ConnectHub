@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import ListRow from '@/src/components/(app)/lists/ListRow';
 import Fab from '@/src/components/Fab';
@@ -47,9 +48,17 @@ const memberLists: ListItem[] = [
 
 export default function Lists() {
   const [tab, setTab] = useState<ListTab>('subscribed');
+  const listRef = useRef<FlatList>(null);
   const lists = useMemo(() => (tab === 'subscribed' ? subscribedLists : memberLists), [tab]);
 
   const renderItem = ({ item }: { item: ListItem }) => <ListRow {...item} />;
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setTab('subscribed');
+      listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    }, [])
+  );
 
   const EmptyState = () => (
     <View style={styles.emptyCard}>
@@ -79,6 +88,7 @@ export default function Lists() {
       </View>
 
       <FlatList
+        ref={listRef}
         data={lists}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}

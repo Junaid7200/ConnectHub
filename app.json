@@ -1,6 +1,5 @@
 {
   "expo": {
-
     "name": "app",
     "slug": "app",
     "version": "1.0.0",
@@ -40,7 +39,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -2,13 +2,27 @@ import Avatar from '@/src/components/(app)/(Nav)/avatar';
 import TweetCard from '@/src/components/(app)/TweetCard';
 import { TweetCardProps } from '@/src/types/types';
 import { Asset } from 'expo-asset';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BarChart3, ChevronLeft, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
-const mainTweet: TweetCardProps = {
+type Variant = 'mine' | 'other';
+
+const mineTweet: TweetCardProps = {
+  id: 'mine',
+  displayName: 'Pixsellz',
+  username: 'pixsellz',
+  time: '17:18 · 2/14/20',
+  text: 'Must have icon collections',
+  counts: { replies: 3, retweets: 2, likes: 24, shares: 1 },
+  media: [require('@/assets/images/project_images/MediaToolBar/Media.png')],
+  isOwnTweet: true,
+};
+
+const otherTweet: TweetCardProps = {
+  id: 'other',
   displayName: 'karennne',
   username: 'karenne',
   time: '09:28 · 2/21/20',
@@ -19,6 +33,7 @@ const mainTweet: TweetCardProps = {
 
 const replies: TweetCardProps[] = [
   {
+    id: 'r1',
     displayName: 'kiero_d',
     username: 'kiero_d',
     time: '2d',
@@ -26,6 +41,7 @@ const replies: TweetCardProps[] = [
     counts: { replies: 1, retweets: 1, likes: 1, shares: 0 },
   },
   {
+    id: 'r2',
     displayName: 'karenne',
     username: 'karenne',
     time: '2d',
@@ -36,11 +52,73 @@ const replies: TweetCardProps[] = [
 
 export default function TweetDetailScreen() {
   const router = useRouter();
+  const { variant } = useLocalSearchParams<{ variant?: Variant }>();
+  const activeVariant: Variant = variant === 'mine' ? 'mine' : 'other';
+  const mainTweet = activeVariant === 'mine' ? mineTweet : otherTweet;
+
   const [liked, setLiked] = useState(false);
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
   const retweetCommentUri = useMemo(
     () => Asset.fromModule(require('@/assets/images/project_images/retweetWithComment.svg')).uri,
     []
+  );
+
+  const ListHeader = () => (
+    <View>
+      <TweetCard {...mainTweet} containerStyle={styles.tweetCard} hideEngagement />
+      <View style={styles.timeRow}>
+        <Text style={styles.timeText}>{mainTweet.time} · </Text>
+        <Text style={styles.timeLink}>Twitter Web App</Text>
+      </View>
+      <View style={styles.divider} />
+
+      {activeVariant === 'mine' && (
+        <>
+          <View style={styles.sectionRow}>
+            <BarChart3 size={16} color="#657786" />
+            <Text style={[styles.metaText, { marginLeft: 8 }]}>View Tweet activity</Text>
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      <View style={styles.countsRow}>
+        <Text style={styles.countText}>
+          <Text style={styles.countNumber}>{mainTweet.counts.retweets}</Text> Retweets
+        </Text>
+        <Text style={[styles.countText, { marginLeft: 12 }]}>
+          <Text style={styles.countNumber}>{mainTweet.counts.likes}</Text> Likes
+        </Text>
+      </View>
+      <View style={styles.divider} />
+
+      <View style={styles.engagementRow}>
+        <MessageCircle size={20} color="#657786" />
+        <Pressable hitSlop={8} onPress={() => setShowRetweetSheet(true)}>
+          <Repeat2 size={20} color="#657786" />
+        </Pressable>
+        <Pressable
+          hitSlop={8}
+          onPress={() => setLiked((prev) => !prev)}
+          style={styles.engagementPress}
+        >
+          <Heart size={20} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />
+        </Pressable>
+        <Pressable
+          hitSlop={8}
+          onPress={async () => {
+            try {
+              await Share.share({ message: mainTweet.text });
+            } catch {
+              /* noop */
+            }
+          }}
+        >
+          <Upload size={20} color="#657786" />
+        </Pressable>
+      </View>
+      <View style={styles.divider} />
+    </View>
   );
 
   return (
@@ -54,62 +132,22 @@ export default function TweetDetailScreen() {
       </View>
 
       <FlatList
-        data={replies}
-        keyExtractor={(_, idx) => `reply-${idx}`}
-        ListHeaderComponent={
-          <View>
-            <TweetCard {...mainTweet} containerStyle={styles.tweetCard} hideEngagement />
-            <View style={styles.timeRow}>
-              <Text style={styles.timeText}>09:28 · 2/21/20 · </Text>
-              <Text style={styles.timeLink}>Twitter Web App</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.countsRow}>
-              <Text style={styles.countText}>
-                <Text style={styles.countNumber}>{mainTweet.counts.retweets}</Text> Retweets
-              </Text>
-              <Text style={[styles.countText, { marginLeft: 12 }]}>
-                <Text style={styles.countNumber}>{mainTweet.counts.likes}</Text> Likes
-              </Text>
-            </View>
-            <View style={styles.divider} />
-
-            <View style={styles.engagementRow}>
-              <MessageCircle size={20} color="#657786" />
-              <Pressable hitSlop={8} onPress={() => setShowRetweetSheet(true)}>
-                <Repeat2 size={20} color="#657786" />
-              </Pressable>
-              <Pressable
-                hitSlop={8}
-                onPress={() => setLiked((prev) => !prev)}
-                style={styles.engagementPress}
-              >
-                <Heart size={20} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />
-              </Pressable>
-              <Pressable
-                hitSlop={8}
-                onPress={async () => {
-                  try {
-                    await Share.share({ message: mainTweet.text });
-                  } catch {
-                    /* noop */
-                  }
-                }}
-              >
-                <Upload size={20} color="#657786" />
-              </Pressable>
-            </View>
-            <View style={styles.divider} />
-          </View>
-        }
+        data={activeVariant === 'mine' ? [] : replies}
+        keyExtractor={(item) => item.id as string}
+        ListHeaderComponent={<ListHeader />}
         renderItem={({ item }) => (
           <TweetCard {...item} containerStyle={styles.replyCard} onPressThread={undefined} showThread={false} />
         )}
+        ListEmptyComponent={
+          activeVariant === 'mine' ? <View style={styles.emptyReplies} /> : null
+        }
         contentContainerStyle={{ paddingBottom: 200 }}
       />
       <View style={styles.replyBar}>
         <Avatar source={require('@/assets/images/project_images/p1.png')} name="You" size={34} />
-        <Text style={styles.composerPlaceholder}>Tweet your reply</Text>
+        <Text style={styles.composerPlaceholder}>
+          {activeVariant === 'mine' ? 'Add another Tweet' : 'Tweet your reply'}
+        </Text>
       </View>
       <Modal transparent visible={showRetweetSheet} animationType="fade" onRequestClose={() => setShowRetweetSheet(false)}>
         <View style={styles.sheetOverlay}>
@@ -135,10 +173,9 @@ export default function TweetDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-  flex: 1, 
-  backgroundColor: '#FFFFFF',
-  paddingTop: 40
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     height: 90,
@@ -168,6 +205,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4C9EEB',
     fontWeight: '500',
+  },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    paddingHorizontal: 16,
+  },
+  metaText: {
+    fontSize: 15,
+    color: '#0F1419',
   },
   countsRow: {
     flexDirection: 'row',
@@ -201,9 +248,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: 360,
+    marginTop: 4,
+    marginBottom: 8,
   },
   engagementPress: {
     padding: 4,
+  },
+  emptyReplies: {
+    minHeight: 200,
+    backgroundColor: '#E7ECF0',
   },
   replyBar: {
     position: 'absolute',

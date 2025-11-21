@@ -1,11 +1,11 @@
 import Avatar from '@/src/components/(app)/(Nav)/avatar';
-import { TweetCardProps } from '@/src/types/types';
+import { MediaItem, TweetCardProps } from '@/src/types/types';
 import { Asset } from 'expo-asset';
-import { ChevronDown, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Image, ImageSourcePropType, Linking, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import { SvgUri } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import { BarChart3, ChevronDown, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image, Linking, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { SvgUri } from 'react-native-svg';
 
 // Simple helper to keep numbers short (e.g., 1200 -> 1.2K)
 const formatCount = (value: number) => {
@@ -37,15 +37,36 @@ export default function TweetCard({
   hideEngagement,
   onSharePress,
   onLikeToggle,
+  showActivityIcon,
 }: TweetCardProps) {
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
   const [liked, setLiked] = useState(false);
   const router = useRouter();
+  const [thumbUri, setThumbUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const maybeGenerateThumb = async () => {
+      const firstMedia = media?.[0];
+      const uri = (firstMedia?.type === 'video' && (firstMedia.source as any)?.uri) || null;
+      if (!uri || firstMedia?.poster) {
+        setThumbUri(null);
+        return;
+      }
+      try {
+        const { getThumbnailAsync } = await import('expo-video-thumbnails');
+        const result = await getThumbnailAsync(uri, { time: 0 });
+        setThumbUri(result?.uri ?? null);
+      } catch {
+        setThumbUri(null);
+      }
+    };
+    maybeGenerateThumb();
+  }, [media]);
 
   const likedText =
     typeof likedBy === 'string' ? likedBy : likedBy?.length ? likedBy.join(' and ') : undefined;
 
-  const avatarSource: ImageSourcePropType | undefined = avatar
+  const avatarSource = avatar
     ? avatar
     : avatarUrl
       ? { uri: avatarUrl }
@@ -105,6 +126,47 @@ export default function TweetCard({
     [handleLinkPress]
   );
 
+  const renderMedia = useCallback(
+    (item: MediaItem, navRouter?: ReturnType<typeof useRouter>, thumb?: string | null) => {
+      if (item.type === 'image') {
+        return <Image source={item.source as any} style={styles.mediaImage} />;
+      }
+
+      const nav = navRouter ?? router;
+      const uri = (item.source as any)?.uri;
+      if (!uri) {
+        return (
+          <View style={styles.videoPlaceholder}>
+            <Text style={styles.videoPlaceholderText}>Video</Text>
+          </View>
+        );
+      }
+
+      return (
+        <Pressable
+          onPress={() => {
+            nav.push({
+              pathname: '/video-player',
+              params: { src: uri },
+            });
+          }}
+        >
+          {item.poster || thumb ? (
+            <Image source={(item.poster as any) || ({ uri: thumb! } as any)} style={styles.mediaImage} />
+          ) : (
+            <View style={styles.mediaImage}>
+              <Text style={styles.videoPlaceholderText}>Video</Text>
+            </View>
+          )}
+          <View style={styles.playOverlay}>
+            <View style={styles.playTriangle} />
+          </View>
+        </Pressable>
+      );
+    },
+    [router]
+  );
+
   return (
     <>
       <View style={[styles.card, containerStyle]}>
@@ -148,20 +210,22 @@ export default function TweetCard({
             {renderTweetText(text)}
 
             {media && media.length > 0 ? (
-              <View style={styles.mediaWrapper}>
-                <Image source={media[0]} style={styles.mediaImage} />
-              </View>
+              <View style={styles.mediaWrapper}>{renderMedia(media[0], router, thumbUri)}</View>
             ) : null}
 
             {!hideEngagement && (
-              <View style={styles.engagementRow}>
+              <View style={[styles.engagementRow, showActivityIcon && styles.engagementRowWide]}>
                 <EngagementItem
                   icon={<MessageCircle size={18} color="#657786" />}
                   count={counts.replies}
                   onPress={
                     onPressComment
                       ? onPressComment
-                      : () => router.push(isOwnTweet ? '/(app)/tweet-mine' : '/(app)/tweet-detail')
+                      : () =>
+                        router.push({
+                          pathname: '/(app)/tweet-detail',
+                          params: { variant: isOwnTweet ? 'mine' : 'other' },
+                        })
                   }
                 />
                 <EngagementItem
@@ -187,14 +251,17 @@ export default function TweetCard({
                     onSharePress
                       ? onSharePress
                       : async () => {
-                        try {
-                          await Share.share({ message: text });
-                        } catch {
-                          // no-op
+                          try {
+                            await Share.share({ message: text });
+                          } catch {
+                            // no-op
+                          }
                         }
-                      }
                   }
                 />
+                {showActivityIcon && (
+                  <EngagementItem icon={<BarChart3 size={18} color="#657786" />} />
+                )}
               </View>
             )}
 
@@ -212,19 +279,56 @@ export default function TweetCard({
   );
 }
 
+function renderMedia(item: MediaItem, router: ReturnType<typeof useRouter>, thumbUri?: string | null) {
+  if (item.type === 'image') {
+    return <Image source={item.source as any} style={styles.mediaImage} />;
+  }
+
+  const uri = (item.source as any)?.uri;
+  if (!uri) {
+    return (
+      <View style={styles.videoPlaceholder}>
+        <Text style={styles.videoPlaceholderText}>Video</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => {
+        router.push({
+          pathname: '/video-player',
+          params: { src: uri },
+        });
+      }}
+    >
+          {item.poster || thumbUri ? (
+            <Image source={(item.poster as any) || { uri: thumbUri! }} style={styles.mediaImage} />
+          ) : (
+            <View style={styles.mediaImage}>
+              <Text style={styles.videoPlaceholderText}>Video</Text>
+            </View>
+          )}
+      <View style={styles.playOverlay}>
+        <View style={styles.playTriangle} />
+      </View>
+    </Pressable>
+  );
+}
+
 function EngagementItem({
   icon,
   count,
   onPress,
 }: {
   icon: React.ReactElement;
-  count: number;
+  count?: number;
   onPress?: () => void;
 }) {
   const content = (
     <View style={styles.engagementItem}>
       {icon}
-      <Text style={styles.engagementText}>{formatCount(count)}</Text>
+      {typeof count === 'number' && <Text style={styles.engagementText}>{formatCount(count)}</Text>}
     </View>
   );
 
@@ -351,17 +455,47 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: 'cover',
   },
+  videoPlaceholder: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#E7ECF0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoPlaceholderText: {
+    color: '#657786',
+    fontWeight: '600',
+  },
+  playOverlay: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 14,
+    borderTopWidth: 10,
+    borderBottomWidth: 10,
+    borderLeftColor: '#FFFFFF',
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
   engagementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: 28, // tighten spacing between action items
+    columnGap: 24, // tighter spacing
     alignSelf: 'flex-start',
     marginTop: 4,
+  },
+  engagementRowWide: {
+    // columnGap: 18,
   },
   engagementItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: 6,
+    columnGap: 10,
   },
   engagementPressable: {
     paddingVertical: 4,

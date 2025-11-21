@@ -58,12 +58,25 @@ export type TweetCardProps = {
   showThread?: boolean;
   onPressThread?: () => void;
   containerStyle?: ViewStyle;
-  media?: ImageSourcePropType[];
+  media?: MediaItem[];
   isOwnTweet?: boolean;
   onPressComment?: () => void;
   hideEngagement?: boolean;
   onSharePress?: () => void;
   onLikeToggle?: (liked: boolean) => void;
+  showActivityIcon?: boolean;
+  pinned?: boolean;
+};
+
+export type SettingItem = {
+  title: string;
+  onPress?: () => void;
+};
+
+export type MediaItem = {
+  type: 'image' | 'video';
+  source: ImageSourcePropType | { uri: string };
+  poster?: ImageSourcePropType;
 };
 
 export type ProfileAvatarProps = {
