@@ -279,43 +279,6 @@ export default function TweetCard({
   );
 }
 
-function renderMedia(item: MediaItem, router: ReturnType<typeof useRouter>, thumbUri?: string | null) {
-  if (item.type === 'image') {
-    return <Image source={item.source as any} style={styles.mediaImage} />;
-  }
-
-  const uri = (item.source as any)?.uri;
-  if (!uri) {
-    return (
-      <View style={styles.videoPlaceholder}>
-        <Text style={styles.videoPlaceholderText}>Video</Text>
-      </View>
-    );
-  }
-
-  return (
-    <Pressable
-      onPress={() => {
-        router.push({
-          pathname: '/video-player',
-          params: { src: uri },
-        });
-      }}
-    >
-          {item.poster || thumbUri ? (
-            <Image source={(item.poster as any) || { uri: thumbUri! }} style={styles.mediaImage} />
-          ) : (
-            <View style={styles.mediaImage}>
-              <Text style={styles.videoPlaceholderText}>Video</Text>
-            </View>
-          )}
-      <View style={styles.playOverlay}>
-        <View style={styles.playTriangle} />
-      </View>
-    </Pressable>
-  );
-}
-
 function EngagementItem({
   icon,
   count,

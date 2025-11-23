@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import NotiAll from '@/src/components/(app)/notiAll';
 import TweetCard from '@/src/components/(app)/TweetCard';
@@ -54,7 +54,7 @@ export default function Notifications() {
     }, [])
   );
 
-  const renderItem = ({ item }: { item: AllNotification | MentionNotification }) => {
+  const renderItem: ListRenderItem<AllNotification | MentionNotification> = ({ item }) => {
     if (tab === 'all') {
       const noti = item as AllNotification;
       return <NotiAll avatar={noti.avatar} title={noti.title} body={noti.body} link={noti.link} />;

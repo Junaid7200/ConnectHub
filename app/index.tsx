@@ -1,7 +1,7 @@
-import { useAppSelector } from '@/src/hooks/useRedux';
+// import { useAppSelector } from '@/src/hooks/useRedux';
 
 export default function StartPage() {
-  const {isAuthenticated, session} = useAppSelector((state) => state.auth);
+  // const {isAuthenticated, session} = useAppSelector((state) => state.auth);
   // console.log(`is authenticated: ${isAuthenticated}`);
   // console.log('session:', JSON.stringify(session, null, 2));
   // if (isAuthenticated) {

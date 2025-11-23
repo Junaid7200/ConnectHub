@@ -1,5 +1,4 @@
 import "@/app/global.css";
-import { DrawerProvider } from "@/src/components/Drawer";
 import { useAppDispatch } from "@/src/hooks/useRedux";
 import { clearSession, setSession } from "@/src/store/features/auth/authSlice";
 import { store } from "@/src/store/store";
@@ -17,13 +16,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 function RootLayoutNav() {
+  const dispatch = useAppDispatch();
   const [session, setTheSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     "Inter-Regular": require("../assets/fonts/Inter-Regular.ttf"),
     "Inter-Medium": require("../assets/fonts/Inter-Medium.ttf"),
     "Inter-SemiBold": require("../assets/fonts/Inter-SemiBold.ttf"),
   });
-  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (fontError) throw fontError;
@@ -52,34 +52,25 @@ function RootLayoutNav() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    // supabase.auth.getSession().then(({ data: { session } }) => {
-    //   console.log("Getting initial session:", session);
-    //   setTheSession(session)
-    //   if (session) {
-    //     console.log("Initial session:", session);
-    //     dispatch(setSession(session.user))
-    //     console.log("this is the user in redux now:", session.user)
-    //     router.replace('/(app)/home');
-    //   }
-    //   else {
-    //     console.log("there was no session: ", session);
-    //     router.replace('/(auth)/login');
-    //   }
-    // })
-    supabase.auth.onAuthStateChange((_event, session) => {
-      // console.log("Auth state changed:", _event, session);
-      setTheSession(session)
-      if (session) {
-        dispatch(setSession(session.user))
-        // console.log("onAuthStateChange just triggered, new value in redux is: ", session.user)
+    let mounted = true;
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setTheSession(nextSession);
+      setAuthReady(true);
+      if (nextSession) {
+        dispatch(setSession(nextSession.user));
         router.replace('/(app)/home');
-      }
-      else {
-        dispatch(clearSession())
+      } else {
+        dispatch(clearSession());
         router.replace('/(auth)/login');
       }
-    })
-  }, [])
+    });
+
+    return () => {
+      mounted = false;
+      authListener?.subscription.unsubscribe();
+    };
+  }, [dispatch]);
 
   if (!fontsLoaded) {
     return null;
@@ -100,9 +91,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <DrawerProvider>
-        <RootLayoutNav />
-      </DrawerProvider>
+      {/* <SafeAreaProvider> */}
+        {/* <DrawerProvider> */}
+          <RootLayoutNav />
+        {/* </DrawerProvider> */}
+      {/* </SafeAreaProvider> */}
     </Provider>
   );
 }

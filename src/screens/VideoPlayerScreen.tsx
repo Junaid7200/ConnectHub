@@ -1,10 +1,12 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEvent } from 'expo';
-import { X, Repeat2, Heart, MessageCircle, Upload, Play, Pause } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
+import { useEvent } from 'expo';
+import { Asset } from 'expo-asset';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { Heart, MessageCircle, Pause, Play, Repeat2, Upload } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SvgUri } from 'react-native-svg';
 
 export default function VideoPlayerScreen() {
   const { src } = useLocalSearchParams<{ src?: string }>();
@@ -12,18 +14,23 @@ export default function VideoPlayerScreen() {
   const player = useVideoPlayer(
     useMemo(() => ({ uri: src || '' }), [src]),
     (instance) => {
-      (instance as any)?.seek?.(0);
-      (instance as any)?.play?.();
+      instance.currentTime = 0;
+      instance.timeUpdateEventInterval = 0.25;
+      instance.play?.();
     }
   );
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [reply, setReply] = useState('');
   const timeUpdate = useEvent(player, 'timeUpdate');
-  const statusChange = useEvent(player, 'statusChange');
+  const sourceLoad = useEvent(player, 'sourceLoad');
   const playingChange = useEvent(player, 'playingChange');
   const position = timeUpdate?.currentTime ?? 0;
-  const duration =
-    (statusChange && (statusChange as any).duration !== undefined ? (statusChange as any).duration : 0) ?? 0;
+  const duration = sourceLoad?.duration ?? player?.duration ?? 0;
+  const crossUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/VideoPlayer/cross.svg')).uri, []);
+  const minimizeUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/VideoPlayer/Minimize.svg')).uri, []);
 
   useEffect(() => {
     setIsPlaying(playingChange?.isPlaying ?? false);
@@ -37,12 +44,12 @@ export default function VideoPlayerScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()}>
-          <X size={20} color="#FFFFFF" />
+      <View style={styles.topRow}>
+        <Pressable style={styles.topIconButton} onPress={() => router.back()}>
+          <SvgUri uri={crossUri} width={16} height={16} />
         </Pressable>
-        <Pressable style={styles.iconButton}>
-          <Repeat2 size={20} color="#FFFFFF" />
+        <Pressable style={styles.topIconButton} onPress={() => router.back()}>
+          <SvgUri uri={minimizeUri} width={16} height={16} />
         </Pressable>
       </View>
 
@@ -50,8 +57,9 @@ export default function VideoPlayerScreen() {
         <VideoView
           style={styles.video}
           player={player}
+          nativeControls={false}
           contentFit="contain"
-          allowsFullscreen
+          fullscreenOptions={{ enable: false }}
           allowsPictureInPicture
         />
       </View>
@@ -66,27 +74,21 @@ export default function VideoPlayerScreen() {
             }
           }}
           style={styles.playPause}
+          hitSlop={8}
         >
           {isPlaying ? <Pause size={18} color="#FFFFFF" /> : <Play size={18} color="#FFFFFF" />}
         </Pressable>
         <Slider
           style={{ flex: 1, marginHorizontal: 12 }}
           minimumValue={0}
-          maximumValue={Math.max(duration, 0.0001)}
+          maximumValue={Math.max(duration, position, 0.0001)}
           value={position}
-          minimumTrackTintColor="#4C9EEB"
-          maximumTrackTintColor="#cccccc"
+          minimumTrackTintColor="#FFFFFF"
+          maximumTrackTintColor="#6B6B6B"
           thumbTintColor="#FFFFFF"
           onSlidingComplete={(value) => {
             const target = Math.max(0, Number(value));
-            const seekable = player as any;
-            if (seekable?.seek) {
-              seekable.seek(target);
-            } else if (seekable?.seekTo) {
-              seekable.seekTo(target);
-            } else if (seekable?.setPositionAsync) {
-              seekable.setPositionAsync(target);
-            }
+            player.currentTime = target;
           }}
         />
         <Text style={styles.time}>
@@ -99,15 +101,37 @@ export default function VideoPlayerScreen() {
         <Text style={styles.engagementText}>2</Text>
         <Repeat2 size={20} color="#20BF6B" />
         <Text style={styles.engagementText}>2</Text>
-        <Heart size={20} color="#E83F6F" />
+        <Pressable onPress={() => setLiked((prev) => !prev)} hitSlop={8} style={styles.engagementIcon}>
+          <Heart size={20} color={liked ? '#E83F6F' : '#FFFFFF'} fill={liked ? '#E83F6F' : 'none'} />
+        </Pressable>
         <Text style={styles.engagementText}>6</Text>
-        <Upload size={20} color="#FFFFFF" />
+        <Pressable
+          onPress={async () => {
+            try {
+              await Share.share({ message: 'Check this out' });
+              setShared(true);
+            } catch {
+              /* noop */
+            }
+          }}
+          hitSlop={8}
+          style={styles.engagementIcon}
+        >
+          <Upload size={20} color={shared ? '#4C9EEB' : '#FFFFFF'} />
+        </Pressable>
       </View>
 
       <View style={styles.replyBar}>
-        <View style={styles.replyInput}>
-          <Text style={styles.replyPlaceholder}>Tweet your reply</Text>
-        </View>
+        <TextInput
+          style={styles.replyInput}
+          placeholder="Tweet your reply"
+          placeholderTextColor="rgba(255,255,255,0.7)"
+          value={reply}
+          onChangeText={setReply}
+          multiline={false}
+          returnKeyType="send"
+          onSubmitEditing={() => setReply('')}
+        />
       </View>
     </View>
   );
@@ -116,20 +140,23 @@ export default function VideoPlayerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F0F0F',
+    backgroundColor: '#383838',
   },
-  header: {
-    height: 48,
+  topRow: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    top: 50,
+    zIndex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
-  iconButton: {
+  topIconButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -145,14 +172,14 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#191919',
     paddingHorizontal: 16,
     paddingVertical: 8,
+    height: 44,
   },
   playPause: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#4C9EEB',
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -167,28 +194,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
     paddingVertical: 10,
+    backgroundColor: '#191919',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopColor: '#474747',
   },
   engagementText: {
     color: '#FFFFFF',
     marginLeft: 4,
     marginRight: 12,
   },
+  engagementIcon: {
+    padding: 4,
+  },
   replyBar: {
     paddingHorizontal: 16,
+    backgroundColor: '#191919',
     paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopColor: '#474747',
   },
   replyInput: {
     height: 38,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: '#474747',
     paddingHorizontal: 12,
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#191919',
   },
   replyPlaceholder: {
     color: '#FFFFFF',

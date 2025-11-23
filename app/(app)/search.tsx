@@ -1,7 +1,8 @@
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import Fab from '@/src/components/Fab';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { FlatList, ListRenderItem, StyleSheet, Text, View } from 'react-native';
+import { TrendItem } from '@/src/types/types';
 
 const emptyState = {
   title: 'No new trends for you',
@@ -10,7 +11,7 @@ const emptyState = {
   cta: 'Change location',
 };
 
-const mockTrends = [
+const mockTrends: TrendItem[] = [
   { id: 't1', title: 'React Native 0.81', tweets: '12.3K Tweets', category: 'Technology · Trending' },
   { id: 't2', title: '#UIUX', tweets: '28.1K Tweets', category: 'Design · Trending' },
   { id: 't3', title: 'Expo 50', tweets: '9,417 Tweets', category: 'Tech · Trending' },
@@ -22,7 +23,7 @@ export default function Search() {
   const router = useRouter();
   const trends = mockTrends; // swap to [] to see the empty state
 
-  const renderTrend = ({ item }: { item: typeof mockTrends[number] }) => (
+  const renderTrend: ListRenderItem<TrendItem> = ({ item }) => (
     <View style={styles.trendRow}>
       <Text style={styles.trendCategory}>{item.category}</Text>
       <Text style={styles.trendTitle}>{item.title}</Text>
@@ -31,7 +32,7 @@ export default function Search() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <FlatList
         data={trends}
         ListHeaderComponent={
@@ -54,7 +55,7 @@ export default function Search() {
         renderItem={renderTrend}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        ListFooterComponent={<View style={{ height: 32 }} />}
+        ListFooterComponent={<View style={{ height: 0 }} />}
       />
       <Fab onPress={() => router.push('/(New)/NewTweet')} />
     </View>
@@ -63,7 +64,7 @@ export default function Search() {
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingBottom: 80,
+    paddingBottom: 0,
     backgroundColor: '#FFFFFF',
   },
   sectionHeader: {
@@ -74,9 +75,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   sectionHeaderText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F1419',
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#141619',
   },
   sectionHeaderDivider: {
     height: StyleSheet.hairlineWidth,

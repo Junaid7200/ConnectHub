@@ -1,7 +1,7 @@
 import TweetCard from '@/src/components/(app)/TweetCard';
 import Fab from '@/src/components/Fab';
-import { useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
+import { useRouter } from 'expo-router';
 import { FlatList, View } from 'react-native';
 
 export default function Index() {
@@ -47,7 +47,7 @@ export default function Index() {
             isOwnTweet={item.isOwnTweet}
           />
         )}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 0 }}
       />
       <Fab onPress={() => router.push('/(New)/NewTweet')} />
     </View>

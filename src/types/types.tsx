@@ -138,3 +138,10 @@ export type ListItem = {
   subscribers?: number;
   avatar?: ImageSourcePropType;
 };
+
+export type TrendItem = {
+  id: string;
+  title: string;
+  tweets: string;
+  category: string;
+};

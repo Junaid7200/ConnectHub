@@ -9,7 +9,7 @@ export default function MessagesSearchBar() {
       width={382}
       align="left"
       backgroundColor="#E7ECF0"
-      showFocusBorder={false}
+      showFocusBorder={true}
       style={{ paddingHorizontal: 14, paddingVertical: 10 }}
     />
   );

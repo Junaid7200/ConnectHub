@@ -11,8 +11,13 @@ export default function MsgCard({
   date,
   preview,
 }: MessageCardProps) {
+  const [isPressed, setIsPressed] = React.useState(false);
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isPressed && { backgroundColor: "#CED5DC" }]}
+  onStartShouldSetResponder={() => true}
+  onResponderGrant={() => setIsPressed(true)}
+  onResponderRelease={() => setIsPressed(false)}
+  onResponderTerminate={() => setIsPressed(false)}>
       <Avatar
         source={avatar}
         name={displayName}
@@ -37,7 +42,6 @@ export default function MsgCard({
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",

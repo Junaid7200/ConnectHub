@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import ListRow from '@/src/components/(app)/lists/ListRow';
@@ -51,7 +51,7 @@ export default function Lists() {
   const listRef = useRef<FlatList>(null);
   const lists = useMemo(() => (tab === 'subscribed' ? subscribedLists : memberLists), [tab]);
 
-  const renderItem = ({ item }: { item: ListItem }) => <ListRow {...item} />;
+  const renderItem: ListRenderItem<ListItem> = ({ item }) => <ListRow {...item} />;
 
   useFocusEffect(
     React.useCallback(() => {
