@@ -3,9 +3,9 @@ import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import NotiAll from '@/src/components/(app)/notiAll';
-import TweetCard from '@/src/components/(app)/TweetCard';
-import Fab from '@/src/components/Fab';
+import NotiAll from '@/src/components/features/Cards/NotiAll';
+import TweetCard from '@/src/components/features/Cards/TweetCard';
+import Fab from '@/src/components/primitives/Fab';
 import { AllNotification, MentionNotification, NotificationTab } from '@/src/types/types';
 
 const mockAll: AllNotification[] = [

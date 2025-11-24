@@ -1,6 +1,6 @@
+import { Search } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { Search } from 'lucide-react-native';
 
 export default function FlatSearchBar() {
   return (

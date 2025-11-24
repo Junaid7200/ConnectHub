@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
-import MsgCard from '@/src/components/(app)/(msgs)/msgCard';
-import MessagesSearchBar from '@/src/components/(app)/(msgs)/search';
-import Fab from '@/src/components/Fab';
+import MsgCard from '@/src/components/features/Cards/MsgCard';
+import MessagesSearchBar from '@/src/components/features/Search/MsgSearch';
+import Fab from '@/src/components/primitives/Fab';
 import { MessageCardProps } from '@/src/types/types';
 
 

@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import Avatar from '@/src/components/primitives/Header/avatar';
 import { NotiAllProps } from '@/src/types/types';
 
 export default function NotiAll({ avatar, title, body, link }: NotiAllProps) {

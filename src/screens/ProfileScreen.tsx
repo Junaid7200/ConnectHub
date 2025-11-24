@@ -1,14 +1,17 @@
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
-import TweetCard from '@/src/components/(app)/TweetCard';
-import Fab from '@/src/components/Fab';
-import { TweetCardProps } from '@/src/types/types';
+import TweetCard from '@/src/components/features/Cards/TweetCard';
+import Fab from '@/src/components/primitives/Fab';
+import Avatar from '@/src/components/primitives/Header/avatar';
+import { useAppSelector } from '@/src/hooks/useRedux';
+import { supabase } from '@/src/lib/supabase';
+import { Profile as ProfileType, TweetCardProps } from '@/src/types/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft } from 'lucide-react-native';
-import React, { useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
 
@@ -82,6 +85,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
+  const { session: authUser } = useAppSelector((state) => state.auth);
+  const userId = authUser?.id ?? null;
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const linkUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/Profile/Link.svg')).uri, []);
   const calendarUri = useMemo(
@@ -95,20 +103,138 @@ export default function ProfileScreen() {
       listRef.current?.scrollToOffset({ animated: false, offset: 0 });
     }, [])
   );
+
+  const displayName = profile?.displayName ?? 'Pixsellz';
+  const username = profile?.username ?? 'pixsellz';
+  const bannerUri = profile?.bannerUrl ?? null;
+  const avatarSource = profile?.avatarUrl ? { uri: profile.avatarUrl } : (profileAvatar as any);
+  const bio =
+    profile?.bio ??
+    'Digital Goodies Team - Web & Mobile UI/UX development; Graphics; Illustrations';
+  const linkText = profile?.link ?? 'pixsellz.io';
+  const locationText = profile?.location ?? 'San Francisco';
+  const joinedText = formatJoinedDate(profile?.createdAt);
+
+  const handleChangeBanner = useCallback(async () => {
+    if (!userId) {
+      Alert.alert('Login required', 'Sign in to update your banner.');
+      return;
+    }
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo library access to pick a banner image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      // mediaTypes defaults to Images; passing it explicitly on some SDKs miscasts the type.
+      allowsMultipleSelection: false,
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets?.length) return;
+    const asset = result.assets[0];
+    try {
+      setUploadingBanner(true);
+      const fileExt = asset.fileName?.split('.').pop() ?? 'jpg';
+      const fileName = `banner-${Date.now()}.${fileExt}`;
+      const filePath = `profiles/${userId}/${fileName}`;
+      const response = await fetch(asset.uri);
+      const fileBlob = await response.blob();
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, fileBlob, {
+          upsert: true,
+          contentType: fileBlob.type || 'image/jpeg',
+        });
+      if (uploadError || !uploadData?.path) {
+        throw uploadError ?? new Error('Upload failed');
+      }
+
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(uploadData.path);
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) throw new Error('Unable to resolve banner URL');
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ banner_url: publicUrl })
+        .eq('id', userId);
+      if (updateError) throw updateError;
+
+      setProfile((prev) => (prev ? { ...prev, bannerUrl: publicUrl } : prev));
+    } catch (err: any) {
+      Alert.alert('Banner update failed', err?.message ?? 'Please try again.');
+    } finally {
+      setUploadingBanner(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchProfile = async () => {
+      if (!userId) return;
+      setLoadingProfile(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, banner_url, bio, link, location, is_verified, pinned_tweet_id, created_at')
+        .eq('id', userId)
+        .single();
+      if (!active) return;
+      if (error) {
+        setLoadingProfile(false);
+        return;
+      }
+      if (data) {
+        setProfile({
+          id: data.id,
+          username: data.username,
+          displayName: data.display_name,
+          avatarUrl: data.avatar_url,
+          bannerUrl: data.banner_url,
+          bio: data.bio,
+          link: data.link,
+          location: data.location,
+          isVerified: data.is_verified,
+          pinnedTweetId: data.pinned_tweet_id,
+          createdAt: data.created_at,
+        });
+      }
+      setLoadingProfile(false);
+    };
+    fetchProfile();
+    return () => {
+      active = false;
+    };
+  }, [userId]);
   const pinUri = useMemo(() => Asset.fromModule(require('@/assets/images/project_images/Profile/Pin.svg')).uri, []);
   const renderHeader = () => (
     <View>
-      <View style={[styles.banner, { height: 100 + insets.top, paddingTop: insets.top + 8 }]}>
-        <Pressable style={[styles.backCircle, { top: insets.top + 12 }]} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/home'))}>
+      <Pressable
+        style={[styles.banner, { height: 140 + insets.top, paddingTop: insets.top + 8 }]}
+        onPress={handleChangeBanner}
+      >
+        {bannerUri ? (
+          <Image source={{ uri: bannerUri }} style={StyleSheet.absoluteFillObject} />
+        ) : null}
+        <View style={styles.bannerOverlay} />
+        <Pressable
+          style={[styles.backCircle, { top: insets.top + 12 }]}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/home'))}
+        >
           <ChevronLeft size={20} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.bannerTitle}>Digital Goodies Team</Text>
-      </View>
+        <View style={styles.bannerText}>
+          <Text style={styles.bannerTitle}>{displayName}</Text>
+          <Text style={styles.bannerSubtitle}>
+            {loadingProfile ? 'Loading profile...' : 'Tap to update banner'}
+          </Text>
+          {uploadingBanner && <ActivityIndicator size="small" color="#FFFFFF" style={{ marginTop: 6 }} />}
+        </View>
+      </Pressable>
 
       <View style={styles.profileHeader}>
         <View style={styles.avatarWrapper}>
           <View style={styles.avatarBorder}>
-            <Avatar source={profileAvatar as any} size={86} />
+            <Avatar source={avatarSource as any} name={displayName} size={86} />
           </View>
         </View>
         <Pressable style={styles.editButton}>
@@ -117,15 +243,15 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.infoBlock}>
-        <Text style={styles.name}>Pixsellz</Text>
-        <Text style={styles.handle}>@pixsellz</Text>
-        <Text style={styles.bio}>Digital Goodies Team - Web & Mobile UI/UX development; Graphics; Illustrations</Text>
+        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.handle}>@{username}</Text>
+        <Text style={styles.bio}>{bio}</Text>
 
         <View style={styles.metaRow}>
           <SvgUri uri={linkUri} width={16} height={16} />
-          <Text style={styles.metaLink}> pixsellz.io</Text>
+          <Text style={styles.metaLink}> {linkText}</Text>
           <SvgUri uri={calendarUri} width={16} height={16} style={{ marginLeft: 12 }} />
-          <Text style={styles.metaText}> Joined September 2018</Text>
+          <Text style={styles.metaText}> Joined {joinedText}</Text>
         </View>
 
         <View style={styles.followRow}>
@@ -210,6 +336,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingBottom: 12,
+    overflow: 'hidden',
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   backCircle: {
     position: 'absolute',
@@ -231,6 +362,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '700',
+  },
+  bannerSubtitle: {
+    color: '#E1E8ED',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  bannerText: {
+    rowGap: 2,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -363,3 +502,12 @@ const styles = StyleSheet.create({
     color: '#657786',
   },
 });
+
+function formatJoinedDate(iso?: string | null) {
+  if (!iso) return 'recently';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'recently';
+  const month = date.toLocaleString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+}

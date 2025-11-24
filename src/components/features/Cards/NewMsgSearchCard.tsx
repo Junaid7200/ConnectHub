@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import Avatar from '@/src/components/primitives/Header/avatar';
 import { MessageSearchCardProps } from '@/src/types/types';
-import { SvgUri } from 'react-native-svg';
 import { Asset } from 'expo-asset';
+import { SvgUri } from 'react-native-svg';
 
 export default function NewMsgSearchCard({
   avatar,

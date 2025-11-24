@@ -2,11 +2,10 @@ import "@/app/global.css";
 import { useAppDispatch } from "@/src/hooks/useRedux";
 import { clearSession, setSession } from "@/src/store/features/auth/authSlice";
 import { store } from "@/src/store/store";
-import { Session } from "@supabase/supabase-js";
 import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Platform, Text, TextInput } from "react-native";
 import { Provider } from "react-redux";
 import { supabase } from "../src/lib/supabase";
@@ -17,8 +16,6 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 
 function RootLayoutNav() {
   const dispatch = useAppDispatch();
-  const [session, setTheSession] = useState<Session | null>(null);
-  const [authReady, setAuthReady] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     "Inter-Regular": require("../assets/fonts/Inter-Regular.ttf"),
     "Inter-Medium": require("../assets/fonts/Inter-Medium.ttf"),
@@ -48,21 +45,37 @@ function RootLayoutNav() {
     T.defaultProps.style = [defaultFontStyle, T.defaultProps.style];
     TI.defaultProps.style = [defaultFontStyle, TI.defaultProps.style];
 
-    SplashScreen.hideAsync();
+      SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
   useEffect(() => {
     let mounted = true;
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    let bootstrapped = false;
+
+    const bootstrapSession = async () => {
+      const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-      setTheSession(nextSession);
-      setAuthReady(true);
+      const nextSession = data.session ?? null;
       if (nextSession) {
         dispatch(setSession(nextSession.user));
         router.replace('/(app)/home');
       } else {
         dispatch(clearSession());
         router.replace('/(auth)/login');
+      }
+      bootstrapped = true;
+    };
+
+    bootstrapSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      if (nextSession) {
+        dispatch(setSession(nextSession.user));
+        if (bootstrapped) router.replace('/(app)/home');
+      } else {
+        dispatch(clearSession());
+        if (bootstrapped) router.replace('/(auth)/login');
       }
     });
 
@@ -92,9 +105,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       {/* <SafeAreaProvider> */}
-        {/* <DrawerProvider> */}
           <RootLayoutNav />
-        {/* </DrawerProvider> */}
       {/* </SafeAreaProvider> */}
     </Provider>
   );

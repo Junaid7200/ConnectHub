@@ -1,5 +1,5 @@
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
-import TweetCard from '@/src/components/(app)/TweetCard';
+import TweetCard from '@/src/components/features/Cards/TweetCard';
+import Avatar from '@/src/components/primitives/Header/avatar';
 import { TweetCardProps } from '@/src/types/types';
 import { Asset } from 'expo-asset';
 import { useLocalSearchParams, useRouter } from 'expo-router';

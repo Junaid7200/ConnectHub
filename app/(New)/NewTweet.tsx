@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
-import MediaToolBar from '@/src/components/(app)/MediaToolBar';
-import NewTweetHeader from '@/src/components/(app)/NewTweetHeader';
+import MediaToolBar from '@/src/components/features/New/MediaToolBar';
+import NewTweetHeader from '@/src/components/features/New/NewTweetHeader';
+import Avatar from '@/src/components/primitives/Header/avatar';
 
 export default function NewTweet() {
   const router = useRouter();

@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
-import FlatSearchBar from '@/src/components/(app)/(msgs)/flatSearch';
-import NewMsgSearchCard from '@/src/components/(app)/(msgs)/newMsgSearchCard';
-import SettingsHeader from '@/src/components/SettingsHeader';
+import NewMsgSearchCard from '@/src/components/features/Cards/NewMsgSearchCard';
+import FlatSearchBar from '@/src/components/features/Search/FlatSearch';
+import SettingsHeader from '@/src/components/primitives/GenericHeader';
 import { MessageSearchCardProps } from '@/src/types/types';
 
 const contacts: MessageSearchCardProps[] = [

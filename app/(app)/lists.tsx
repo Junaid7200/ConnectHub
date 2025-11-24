@@ -1,9 +1,9 @@
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useMemo, useRef, useState } from 'react';
 import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 
-import ListRow from '@/src/components/(app)/lists/ListRow';
-import Fab from '@/src/components/Fab';
+import ListRow from '@/src/components/features/lists/ListRow';
+import Fab from '@/src/components/primitives/Fab';
 import { ListItem, ListTab } from '@/src/types/types';
 
 const subscribedLists: ListItem[] = [];

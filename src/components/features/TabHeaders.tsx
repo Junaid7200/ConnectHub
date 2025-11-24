@@ -5,10 +5,10 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SvgUri } from 'react-native-svg';
 
-import { useDrawer } from '../Drawer';
-import Avatar from './(Nav)/avatar';
-import { HomeHeaderRight, SettingsHeaderRight } from './(Nav)/icons';
-import SearchHeader from './(Nav)/SearchBar';
+import { useDrawer } from '../features/Drawer';
+import Avatar from '../primitives/Header/avatar';
+import { HomeHeaderRight, SettingsHeaderRight } from '../primitives/Header/icons';
+import SearchHeader from '../primitives/Header/SearchBar';
 
 function CustomHeader({
   title,

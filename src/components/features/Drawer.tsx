@@ -1,4 +1,5 @@
 import { Asset } from 'expo-asset';
+import { useRouter } from 'expo-router';
 import { MoreHorizontal } from 'lucide-react-native';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
@@ -12,9 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
-import { useRouter } from 'expo-router';
 
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import Avatar from '@/src/components/primitives/Header/avatar';
 
 type DrawerContextValue = {
   openDrawer: () => void;

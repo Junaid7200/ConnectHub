@@ -22,3 +22,9 @@
 ### make sure the database (supabase backend) will perfectly map to all the frontend
 
 ### design the entire frontend first, then create the supabase backend, once the backend is ready, use redux in the project and get the data from the db and make it all work. DO NOT MAKE redundant get/post or anything requests, optimize as much as possible
+
+### Must use supabase backend
+
+### Must use redux for state management
+
+### Must use oneSignal

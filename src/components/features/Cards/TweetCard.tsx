@@ -1,4 +1,4 @@
-import Avatar from '@/src/components/(app)/(Nav)/avatar';
+import Avatar from '@/src/components/primitives/Header/avatar';
 import { MediaItem, TweetCardProps } from '@/src/types/types';
 import { Asset } from 'expo-asset';
 import { useRouter } from 'expo-router';
@@ -146,7 +146,7 @@ export default function TweetCard({
         <Pressable
           onPress={() => {
             nav.push({
-              pathname: '/video-player',
+              pathname: '/(media)/video-player',
               params: { src: uri },
             });
           }}

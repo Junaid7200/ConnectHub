@@ -1,8 +1,8 @@
-import Fab from '@/src/components/Fab';
+import Fab from '@/src/components/primitives/Fab';
+import { TrendItem } from '@/src/types/types';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, ListRenderItem, StyleSheet, Text, View } from 'react-native';
-import { TrendItem } from '@/src/types/types';
 
 const emptyState = {
   title: 'No new trends for you',

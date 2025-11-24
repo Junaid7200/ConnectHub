@@ -1,8 +1,8 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 
-import SettingsHeader from '@/src/components/SettingsHeader';
+import SettingsHeader from '@/src/components/primitives/GenericHeader';
 
 const settingsData = [
   {

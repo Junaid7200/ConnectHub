@@ -1,5 +1,5 @@
-import TweetCard from '@/src/components/(app)/TweetCard';
-import Fab from '@/src/components/Fab';
+import TweetCard from '@/src/components/features/Cards/TweetCard';
+import Fab from '@/src/components/primitives/Fab';
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import { FlatList, View } from 'react-native';

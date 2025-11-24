@@ -1,6 +1,6 @@
 import React from 'react';
 
-import SearchBar from '@/src/components/SearchBar';
+import SearchBar from '@/src/components/features/Search/BaseSearchBar';
 
 export default function SearchHeader() {
   return (

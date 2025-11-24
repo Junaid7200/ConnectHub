@@ -1,5 +1,5 @@
-import NavTab from "@/src/components/(app)/Nav"
-import { DrawerProvider } from "@/src/components/Drawer"
+import { DrawerProvider } from "@/src/components/features/Drawer"
+import NavTab from "@/src/components/features/TabHeaders"
 
 export default function AppLayout() {
     return (
