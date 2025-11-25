@@ -5,7 +5,7 @@ export const getListByOwner = (ownerId: string) => {
 };
 
 export const getSubscribedLists = (profileId: string) => {
-  return supabase.from("list_subscribers").select("*, lists(*").eq("profile_id", profileId).order("created_at", { ascending: false })
+  return supabase.from("list_subscribers").select("*, lists(*)").eq("profile_id", profileId).order("created_at", { ascending: false })
 };
 
 export const getMemberLists = (profileId: string) => {
