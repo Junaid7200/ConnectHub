@@ -18,10 +18,13 @@ export const startConversationTwoStep = async (participantIds: string[]) => {
 
   const rows = participantIds.map((pid) => ({ conversation_id: convo.id, profile_id: pid }));
   const { error: partError } = await supabase.from('conversation_participants').insert(rows);
-  if (partError) throw partError;
-
+  if (partError) {
+    await supabase.from('conversations').delete().eq('id', convo.id); // cleanup
+    throw partError;
+  }
   return convo;
 };
+
 
 
 export const sendMessage = (payload: {
