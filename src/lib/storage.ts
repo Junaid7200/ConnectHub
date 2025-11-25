@@ -13,6 +13,7 @@ export async function uploadProfileAvatar(profileId: string, file: Blob): Promis
   const ext = file.type?.split('/')[1] || 'jpg';
   const path = `profiles/${profileId}/avatar.${ext}`;
   const { error } = await supabase.storage.from('media').upload(path, file, { upsert: true });
+  // upset: true to overwrite existing avatar
   if (error) throw error;
   return { path, publicUrl: await getPublicUrl(path) };
 }
