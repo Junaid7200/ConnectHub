@@ -19,6 +19,8 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
   - Follows seeded (6 rows).
   - 20 tweets with replies; tweet_media seeded with 6 rows (mix images/videos) under `tweets/{tweet_id}/...`; interactions seeded (likes 4, retweets 2, bookmarks 2).
   - Storage now has profile avatars/banners and tweet media for several tweets.
+- Supabase helpers completed in `src/lib`: auth, profiles (incl. user_settings), tweets (timeline/detail/interactions), notifications, messages (two-step conversation start with cleanup), lists, storage (avatar/banner/tweet media, getPublicUrl).
+- RTK Query chosen for data fetching; custom `supabaseBaseQuery` defined. `profilesApi` scaffolded (get/update). We’re keeping types in `src/types/types.ts` and favoring simple, flat code. Current workaround: baseQuery typed as `<any>` temporarily in profilesApi to bypass PostgrestBuilder typing.
 
 ## Requirements (from Requirements_code_quality.md)
 - Components PascalCase; variables camelCase; types live in `src/types/types.tsx`.
@@ -65,7 +67,8 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 6) Optionally reorganize into feature folders as data wiring progresses.
 
 ## RTK Query plan (next steps)
-- Structure: `src/store/services/{auth,profiles,tweets,notifications,messages,lists}.ts` using `createApi` + `fetchBaseQuery` (or custom Supabase client wrapper) to call lib helpers or direct Supabase queries.
+- Structure: `src/store/services/{auth,profiles,tweets,notifications,messages,lists}.ts` using `createApi` with a simple custom `supabaseBaseQuery` that accepts a `SupabaseQuery` type defined in `src/types/types.ts`.
+- Always keep types in `src/types/types.ts` and import them; keep code simple and flat.
 - Keep `auth` slice (existing). Add slices only for UI/local state; prefer RTK Query for data fetching.
 - Screens should consume generated hooks to replace mock data (Home, Profile, Tweet Detail, Notifications, Messages, Lists, Edit Profile).
 

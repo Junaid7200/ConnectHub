@@ -175,3 +175,5 @@ export type TweetMediaInput = {
   position?: number;
 };
 
+
+export type SupabaseQuery = Promise<{ data: any; error: any }>;
