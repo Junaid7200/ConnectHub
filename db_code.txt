@@ -1,0 +1,477 @@
+-- create extension if not exists "pgcrypto";
+
+
+-- -- PROFILES
+-- create table if not exists public.profiles (
+--   id uuid primary key references auth.users(id) on delete cascade,
+--   username text unique not null check (char_length(username) between 3 and 30),
+--   display_name text,
+--   avatar_url text,
+--   banner_url text,
+--   bio text,
+--   link text,
+--   location text,
+--   ongsignal_player_id text,
+--   is_verified boolean default false,
+--   pinned_tweet_id uuid, -- need to make this foreign key later with alter
+--   created_at timestamptz default now(),
+--   updated_at timestamptz default now()
+-- );
+
+
+-- -- FOLLOWS
+-- create table if not exists public.follows (
+--   id uuid primary key default gen_random_uuid(),
+--   follower_id uuid not null references public.profiles(id) on delete cascade,
+--   following_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint follows_unique unique (follower_id, following_id),
+--   constraint follows_not_self check (follower_id <> following_id)
+-- );
+
+
+-- --TWEETS
+-- create table if not exists public.tweets (
+--   id uuid primary key default gen_random_uuid(),
+--   author_id uuid not null references public.profiles(id) on delete cascade,
+--   body text not null,
+--   created_at timestamptz default now(),
+--   parent_tweet_id uuid references public.tweets(id) on delete cascade,
+--   reply_to_user_id uuid references public.profiles(id) on delete set null,
+--   visibility text default 'public' check (visibility in ('public', 'followers')),
+--   geo jsonb
+-- );
+
+
+-- -- TWEET MEDIA
+-- create table if not exists public.tweet_media (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   storage_path text not null, 
+--   media_type text not null check (media_type in ('image', 'video')),
+--   thumbnail_url text,
+--   duration_seconds numeric,
+--   width int,
+--   height int,
+--   position int default 0
+-- );
+
+
+-- -- HASHTAGS
+-- create table if not exists public.tweet_hashtags (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   tag text not null,
+--   constraint tweet_hastags_unique unique (tweet_id, tag)
+-- );
+
+
+-- -- MENTIONS
+-- create table if not exists public.tweet_mentions (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   mentioned_profile_id uuid not null references public.profiles(id) on delete cascade,
+--   constraint tweet_mentions_unique unique (tweet_id, mentioned_profile_id)
+-- );
+
+
+-- -- LIKES
+-- create table if not exists public.tweet_likes (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   user_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint tweet_like_unique unique (tweet_id, user_id)
+-- );
+
+
+-- -- RETWEETS
+-- create table if not exists public.tweet_retweets (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   user_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint tweet_retweet_unique unique (tweet_id, user_id)
+-- );
+
+
+-- -- BOOKMARKS
+-- create table if not exists public.tweet_bookmarks (
+--   id uuid primary key default gen_random_uuid(),
+--   tweet_id uuid not null references public.tweets(id) on delete cascade,
+--   user_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint tweet_bookmarks_unique unique (tweet_id, user_id)
+-- );
+
+
+-- -- LISTS
+-- create table if not exists public.lists (
+--   id uuid primary key default gen_random_uuid(),
+--   owner_id uuid not null references public.profiles(id) on delete cascade,
+--   name text not null,
+--   description text,
+--   is_private boolean default false,
+--   cover_image_url text,
+--   created_at timestamptz default now()
+-- );
+
+-- -- LIST MEMBERS
+-- create table if not exists public.list_members (
+--   id uuid primary key default gen_random_uuid(),
+--   list_id uuid not null references public.lists(id) on delete cascade,
+--   profile_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint list_member_unique unique (list_id, profile_id)
+-- );
+
+
+-- -- SUBSCRIBERS
+-- create table if not exists public.list_subscribers (
+--   id uuid primary key default gen_random_uuid(),
+--   list_id uuid not null references public.lists(id) on delete cascade,
+--   profile_id uuid not null references public.profiles(id) on delete cascade,
+--   created_at timestamptz default now(),
+--   constraint list_subscribers_unique unique (list_id, profile_id)
+-- );
+
+
+-- -- CONVERSATIONS
+-- create table if not exists public.conversations (
+--   id uuid primary key default gen_random_uuid(),
+--   created_at timestamptz default now()
+-- );
+
+
+-- -- CONVERSATION PARTICIPANTS
+-- create table if not exists public.conversation_participants (
+--   id uuid primary key default gen_random_uuid(),
+--   conversation_id uuid not null references public.conversations(id) on delete cascade,
+--   profile_id uuid not null references public.profiles(id) on delete cascade,
+--   role text default 'member' check (role in ('member','admin')),
+--   constraint conversation_participants_unique unique (conversation_id, profile_id)
+-- );
+
+
+-- -- MESSAGES
+-- create table if not exists public.messages (
+--   id uuid primary key default gen_random_uuid(),
+--   conversation_id uuid not null references public.conversations(id) on delete cascade,
+--   sender_id uuid not null references public.profiles(id) on delete cascade,
+--   content text not null,
+--   created_at timestamptz default now()
+-- );
+
+
+-- -- MESSAGE MEDIA
+-- create table if not exists public.message_media (
+--   id uuid primary key default gen_random_uuid(),
+--   message_id uuid not null references public.messages(id) on delete cascade,
+--   storage_path text not null,
+--   media_type text check (media_type in ('image','video')),
+--   thumbnail_url text,
+--   duration_seconds numeric
+-- );
+
+
+-- -- MESSAGE_READ
+-- create table if not exists public.message_reads (
+--   id uuid primary key default gen_random_uuid(),
+--   message_id uuid not null references public.messages(id) on delete cascade,
+--   profile_id uuid not null references public.profiles(id) on delete cascade,
+--   read_at timestamptz default now(),
+--   constraint message_reads_unique unique (message_id, profile_id)
+-- );
+
+-- -- NOTIFICATIONS
+-- create table if not exists public.notifications (
+--   id uuid primary key default gen_random_uuid(),
+--   recipient_id uuid not null references public.profiles(id) on delete cascade,
+--   actor_id uuid references public.profiles(id) on delete set null,
+--   tweet_id uuid references public.tweets(id) on delete set null,
+--   message_id uuid references public.messages(id) on delete set null,
+--   type text not null check (type in ('like','retweet','reply','mention','follow','message','system')),
+--   body text,
+--   created_at timestamptz default now(),
+--   read_at timestamptz
+-- );
+
+-- -- USER SETTINGS (includes quality filter + read receipts)
+-- create table if not exists public.user_settings (
+--   profile_id uuid primary key references public.profiles(id) on delete cascade,
+--   push_likes boolean default true,
+--   push_replies boolean default true,
+--   push_mentions boolean default true,
+--   push_retweets boolean default true,
+--   allow_messages_from text default 'everyone' check (allow_messages_from in ('everyone','people_you_follow')),
+--   safe_search boolean default true,
+--   personalized_results boolean default true,
+--   quality_filter boolean default false,
+--   read_receipts_enabled boolean default true,
+--   updated_at timestamptz default now()
+-- );
+
+
+-- -- Add this at the very end of your schema, after all tables are created
+-- alter table public.profiles 
+--   add constraint profiles_pinned_tweet_fk 
+--   foreign key (pinned_tweet_id) 
+--   references public.tweets(id) 
+--   on delete set null;
+
+
+
+
+-- -------------------------------------------------
+
+-- -- ENABLE RLS
+-- alter table public.profiles enable row level security;
+-- alter table public.follows enable row level security;
+-- alter table public.tweets enable row level security;
+-- alter table public.tweet_media enable row level security;
+-- alter table public.tweet_hashtags enable row level security;
+-- alter table public.tweet_mentions enable row level security;
+-- alter table public.tweet_likes enable row level security;
+-- alter table public.tweet_retweets enable row level security;
+-- alter table public.tweet_bookmarks enable row level security;
+-- alter table public.lists enable row level security;
+-- alter table public.list_members enable row level security;
+-- alter table public.list_subscribers enable row level security;
+-- alter table public.conversations enable row level security;
+-- alter table public.conversation_participants enable row level security;
+-- alter table public.messages enable row level security;
+-- alter table public.message_media enable row level security;
+-- alter table public.message_reads enable row level security;
+-- alter table public.notifications enable row level security;
+-- alter table public.user_settings enable row level security;
+
+
+
+
+
+-- POLICIES (concise versions)
+-- Profiles
+-- create policy "Profiles are readable" on public.profiles for select using (true);
+-- create policy "Own profile insert" on public.profiles for insert with check (auth.uid() = id);
+-- create policy "Own profile update" on public.profiles for update using (auth.uid() = id);
+
+-- -- Follows
+-- create policy "Follows readable" on public.follows for select using (true);
+-- create policy "Follow self-control" on public.follows for insert with check (auth.uid() = follower_id);
+-- create policy "Unfollow self-control" on public.follows for delete using (auth.uid() = follower_id);
+
+-- -- Tweets + media + tags + mentions
+-- create policy "Tweets readable" on public.tweets for select using (true);
+-- create policy "Insert own tweets" on public.tweets for insert with check (auth.uid() = author_id);
+-- create policy "Delete own tweets" on public.tweets for delete using (auth.uid() = author_id);
+
+-- create policy "Tweet media readable" on public.tweet_media for select using (true);
+-- create policy "Insert tweet media if author" on public.tweet_media for insert with check (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+-- create policy "Delete tweet media if author" on public.tweet_media for delete using (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+
+-- create policy "Tweet hashtags readable" on public.tweet_hashtags for select using (true);
+-- create policy "Insert tweet hashtags if author" on public.tweet_hashtags for insert with check (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+-- create policy "Delete tweet hashtags if author" on public.tweet_hashtags for delete using (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+
+-- create policy "Tweet mentions readable" on public.tweet_mentions for select using (true);
+-- create policy "Insert tweet mentions if author" on public.tweet_mentions for insert with check (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+-- create policy "Delete tweet mentions if author" on public.tweet_mentions for delete using (
+--   auth.uid() = (select author_id from public.tweets where id = tweet_id)
+-- );
+
+-- -- Interactions
+-- create policy "Likes readable" on public.tweet_likes for select using (true);
+-- create policy "Like own action" on public.tweet_likes for insert with check (auth.uid() = user_id);
+-- create policy "Unlike own action" on public.tweet_likes for delete using (auth.uid() = user_id);
+
+-- create policy "Retweets readable" on public.tweet_retweets for select using (true);
+-- create policy "Retweet own action" on public.tweet_retweets for insert with check (auth.uid() = user_id);
+-- create policy "Undo retweet own action" on public.tweet_retweets for delete using (auth.uid() = user_id);
+
+-- create policy "Bookmarks readable" on public.tweet_bookmarks for select using (true);
+-- create policy "Bookmark own action" on public.tweet_bookmarks for insert with check (auth.uid() = user_id);
+-- create policy "Unbookmark own action" on public.tweet_bookmarks for delete using (auth.uid() = user_id);
+
+-- -- Lists
+-- create policy "Lists readable to authenticated" on public.lists for select using (auth.role() = 'authenticated');
+-- create policy "Create own list" on public.lists for insert with check (auth.uid() = owner_id);
+-- create policy "Update own list" on public.lists for update using (auth.uid() = owner_id);
+-- create policy "Delete own list" on public.lists for delete using (auth.uid() = owner_id);
+
+-- create policy "List members readable" on public.list_members for select using (auth.role() = 'authenticated');
+-- create policy "Join list self" on public.list_members for insert with check (auth.uid() = profile_id);
+-- create policy "Leave list self" on public.list_members for delete using (auth.uid() = profile_id);
+
+-- create policy "List subscribers readable" on public.list_subscribers for select using (auth.role() = 'authenticated');
+-- create policy "Subscribe self" on public.list_subscribers for insert with check (auth.uid() = profile_id);
+-- create policy "Unsubscribe self" on public.list_subscribers for delete using (auth.uid() = profile_id);
+
+-- -- Conversations / messages
+-- create policy "Conversations readable if participant" on public.conversations for select using (
+--   id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+-- );
+-- create policy "Create conversation" on public.conversations for insert with check (true);
+
+-- create policy "Participants readable if in conversation" on public.conversation_participants for select using (
+--   conversation_id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+-- );
+-- create policy "Add participant (loose)" on public.conversation_participants for insert with check (true);
+-- create policy "Remove self" on public.conversation_participants for delete using (
+--   profile_id = auth.uid()
+-- );
+
+-- create policy "Messages readable if participant" on public.messages for select using (
+--   conversation_id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+-- );
+-- create policy "Send message if participant" on public.messages for insert with check (
+--   sender_id = auth.uid() and
+--   conversation_id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+-- );
+
+-- create policy "Message media readable if participant" on public.message_media for select using (
+--   message_id in (
+--     select m.id from public.messages m
+--     where m.id = message_id
+--     and m.conversation_id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+--   )
+-- );
+-- create policy "Attach media if sender" on public.message_media for insert with check (
+--   exists (
+--     select 1 from public.messages m
+--     where m.id = message_id
+--       and m.sender_id = auth.uid()
+--   )
+-- );
+
+-- create policy "Reads readable if participant" on public.message_reads for select using (
+--   message_id in (
+--     select m.id from public.messages m
+--     where m.conversation_id in (select conversation_id from public.conversation_participants where profile_id = auth.uid())
+--   )
+-- );
+-- create policy "Mark read if participant" on public.message_reads for insert with check (
+--   exists (
+--     select 1 from public.conversation_participants cp
+--     join public.messages m on m.conversation_id = cp.conversation_id
+--     where cp.profile_id = auth.uid() and m.id = message_id
+--   )
+-- );
+
+-- -- Notifications
+-- create policy "Notifications readable to recipient" on public.notifications for select using (recipient_id = auth.uid());
+-- create policy "Notifications insert" on public.notifications for insert with check (auth.role() = 'authenticated');
+
+-- -- User settings
+-- create policy "Settings readable to owner" on public.user_settings for select using (profile_id = auth.uid());
+-- create policy "Settings upsert by owner" on public.user_settings for insert with check (profile_id = auth.uid());
+-- create policy "Settings update by owner" on public.user_settings for update using (profile_id = auth.uid());
+
+-- -- INDEXES (practical set)
+-- create index if not exists idx_tweets_author_created_at on public.tweets(author_id, created_at desc);
+-- create index if not exists idx_tweets_parent on public.tweets(parent_tweet_id);
+-- create index if not exists idx_tweet_likes_user on public.tweet_likes(user_id);
+-- create index if not exists idx_tweet_retweets_user on public.tweet_retweets(user_id);
+-- create index if not exists idx_tweet_bookmarks_user on public.tweet_bookmarks(user_id);
+-- create index if not exists idx_tweet_likes_tweet on public.tweet_likes(tweet_id);
+-- create index if not exists idx_tweet_retweets_tweet on public.tweet_retweets(tweet_id);
+-- create index if not exists idx_tweet_bookmarks_tweet on public.tweet_bookmarks(tweet_id);
+-- create index if not exists idx_notifications_recipient on public.notifications(recipient_id, created_at desc);
+-- create index if not exists idx_messages_conversation on public.messages(conversation_id, created_at desc);
+-- create index if not exists idx_conversation_participants_profile on public.conversation_participants(profile_id);
+-- create index if not exists idx_list_members_profile on public.list_members(profile_id);
+-- create index if not exists idx_list_subscribers_profile on public.list_subscribers(profile_id);
+-- create index if not exists idx_tweet_media_tweet on public.tweet_media(tweet_id);
+
+-- -- TRIGGERS (optional but recommended: updated_at + default settings)
+-- create or replace function public.set_updated_at()
+-- returns trigger as $$
+-- begin
+--   new.updated_at = now();
+--   return new;
+-- end;
+-- $$ language plpgsql;
+
+-- do $$ begin
+--   if not exists (select 1 from pg_trigger where tgname = 'set_profiles_updated_at') then
+--     create trigger set_profiles_updated_at
+--     before update on public.profiles
+--     for each row execute procedure public.set_updated_at();
+--   end if;
+--   if not exists (select 1 from pg_trigger where tgname = 'set_user_settings_updated_at') then
+--     create trigger set_user_settings_updated_at
+--     before update on public.user_settings
+--     for each row execute procedure public.set_updated_at();
+--   end if;
+-- end $$;
+
+-- create or replace function public.create_default_settings()
+-- returns trigger as $$
+-- begin
+--   insert into public.user_settings(profile_id) values (new.id)
+--   on conflict do nothing;
+--   return new;
+-- end;
+-- $$ language plpgsql;
+
+-- do $$ begin
+--   if not exists (select 1 from pg_trigger where tgname = 'create_settings_after_profile') then
+--     create trigger create_settings_after_profile
+--     after insert on public.profiles
+--     for each row execute procedure public.create_default_settings();
+--   end if;
+-- end $$;
+
+
+
+
+
+
+
+-- Clean slate
+-- drop policy if exists "media-auth-write-own-insert" on storage.objects;
+-- drop policy if exists "media-auth-write-own-update" on storage.objects;
+-- drop policy if exists "media-auth-write-own-delete" on storage.objects;
+-- drop policy if exists "media-public-read" on storage.objects;
+
+-- -- Authenticated users can manage their own profile files under profiles/{uid}/...
+-- create policy "media-auth-write-own-insert" on storage.objects
+-- for insert to authenticated
+-- with check (
+--   bucket_id = 'media'
+--   and (storage.foldername(name))[1] = 'profiles'
+--   and (storage.foldername(name))[2] = auth.uid()::text
+-- );
+
+-- create policy "media-auth-write-own-update" on storage.objects
+-- for update to authenticated
+-- using (
+--   bucket_id = 'media'
+--   and (storage.foldername(name))[1] = 'profiles'
+--   and (storage.foldername(name))[2] = auth.uid()::text
+-- );
+
+-- create policy "media-auth-write-own-delete" on storage.objects
+-- for delete to authenticated
+-- using (
+--   bucket_id = 'media'
+--   and (storage.foldername(name))[1] = 'profiles'
+--   and (storage.foldername(name))[2] = auth.uid()::text
+-- );
+
+-- -- Public read for profile/tweet media (Twitter-like)
+-- create policy "media-public-read" on storage.objects
+-- for select to anon
+-- using (
+--   bucket_id = 'media'
+--   and (storage.foldername(name))[1] in ('profiles','tweets')
+-- );

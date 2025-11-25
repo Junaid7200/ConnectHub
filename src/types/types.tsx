@@ -159,3 +159,19 @@ export type TrendItem = {
   tweets: string;
   category: string;
 };
+
+
+
+// src/lib/storage.ts
+
+export type UploadResult = {
+  path: string;
+  publicUrl: string | null;
+};
+
+export type TweetMediaInput = {
+  file: Blob;
+  mediaType: 'image' | 'video';
+  position?: number;
+};
+

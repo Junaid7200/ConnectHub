@@ -1,4 +1,4 @@
-import TweetDetailScreen from '@/src/screens/TweetDetailScreen';
+import TweetDetailScreen from '@/src/components/screens/TweetDetailScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 

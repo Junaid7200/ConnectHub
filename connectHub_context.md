@@ -7,6 +7,18 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 - Profile screen now fetches the logged-in profile from Supabase, shows `banner_url` if present, and lets the user pick & upload a banner to Storage (`media/profiles/{userId}/banner-<timestamp>`), persisting `profiles.banner_url`.
 - Added `expo-image-picker` dependency for banner selection.
 - Added `Profile` type to `src/types/types.tsx` for schema-aligned profile data.
+- Directory structure refreshed:
+  - Routes: grouped under `app/(app)`, `(auth)`, `(settings)`, `(New)`, `(media)`; `video-player` now at `app/(media)/video-player.tsx`.
+  - Components: reorganized into `src/components/features/*` (Cards, Search with `BaseSearchBar`, New, lists, Drawer, TabHeaders) and `src/components/primitives/*` (Header, GenericHeader, Fab), plus settings components.
+  - Screens: now live under `src/components/screens` (Profile/TweetDetail/VideoPlayer), imported by thin route wrappers.
+- Supabase storage: bucket `media` created. Policies:
+  - Auth write (insert/update/delete) for `profiles/{auth.uid()}/...`
+  - Public read (anon) for `profiles/...` and `tweets/...`
+- Seed data loaded:
+  - 5 profiles linked to auth IDs; avatars set via `profiles/{id}/avatar*.png`, banner for alex.
+  - Follows seeded (6 rows).
+  - 20 tweets with replies; tweet_media seeded with 6 rows (mix images/videos) under `tweets/{tweet_id}/...`; interactions seeded (likes 4, retweets 2, bookmarks 2).
+  - Storage now has profile avatars/banners and tweet media for several tweets.
 
 ## Requirements (from Requirements_code_quality.md)
 - Components PascalCase; variables camelCase; types live in `src/types/types.tsx`.
@@ -31,6 +43,8 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 - Profile screen pulls profile data for the logged-in user, displays `banner_url`, and supports banner upload to Storage; still uses static placeholder tweets/bio when data absent.
 - `app/index.tsx` now redirects based on Redux auth state.
 - Routes: tabs under `app/(app)`, modals under `(New)` and `(settings)`, video-player route sits at `app/video-player.tsx`.
+- Storage policies applied to `media` bucket (see Latest updates).
+- Seed data present in DB and Storage (avatars/banners/tweet media).
 
 ## Folder notes
 - Routes live under `app/…` (grouped), but feature components/screens are mixed in `src/components/(app)` and `src/screens`. `video-player.tsx` is alongside `index.tsx` (no feature folder).
@@ -43,10 +57,12 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 - `src/lib` for supabase client/utils; `src/hooks` for typed hooks; `src/store` for root store/slices; `src/assets` if desired.
 
 ## Immediate priorities
-1) Solidify profile data flow: consider Redux slice for profile + banner upload status; add Edit Profile inputs for bio/link/location/avatar/banner.
-2) Data wiring: define remaining domain types in `src/types/types.tsx`; create Redux slices/RTK Query for tweets/profile/notifications/messages/lists/settings aligned to schema; avoid redundant requests.
-3) OneSignal: register device, store `onesignal_player_id` on profile, honor `user_settings` toggles.
-4) Folder cleanup per proposed structure once data work starts.
+1) Wire media paths: ensure `tweet_media` rows match real storage paths; stray thumbnail_url cleared.
+2) Add supabase data layer: TS helpers + RTK Query services for profiles, tweets/media/interactions, notifications, messages, lists, settings (place under `src/lib` and `src/store`).
+3) Implement `src/lib/storage.ts`: uploadProfileAvatar, uploadProfileBanner, uploadTweetMedia (multi), getPublicUrl.
+4) Solidify profile flow: add profile slice + avatar/banner upload helpers; wire “Edit profile” button in `ProfileScreen` to an edit screen/form that uses these helpers to update profile fields and media.
+5) OneSignal: integrate SDK, persist `onesignal_player_id`, respect `user_settings`.
+6) Optionally reorganize into feature folders as data wiring progresses.
 
 ## Supabase access
 MCP Supabase server is reportedly configured; use it to inspect the ConnectHub project when wiring backend and Storage.
