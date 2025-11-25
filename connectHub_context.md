@@ -58,11 +58,16 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 
 ## Immediate priorities
 1) Wire media paths: ensure `tweet_media` rows match real storage paths; stray thumbnail_url cleared.
-2) Add supabase data layer: TS helpers + RTK Query services for profiles, tweets/media/interactions, notifications, messages, lists, settings (place under `src/lib` and `src/store`).
+2) Add supabase data layer: TS helpers (done) + RTK Query services for profiles, tweets/media/interactions, notifications, messages, lists, settings (place under `src/store/services`).
 3) Implement `src/lib/storage.ts`: uploadProfileAvatar, uploadProfileBanner, uploadTweetMedia (multi), getPublicUrl.
 4) Solidify profile flow: add profile slice + avatar/banner upload helpers; wire “Edit profile” button in `ProfileScreen` to an edit screen/form that uses these helpers to update profile fields and media.
 5) OneSignal: integrate SDK, persist `onesignal_player_id`, respect `user_settings`.
 6) Optionally reorganize into feature folders as data wiring progresses.
+
+## RTK Query plan (next steps)
+- Structure: `src/store/services/{auth,profiles,tweets,notifications,messages,lists}.ts` using `createApi` + `fetchBaseQuery` (or custom Supabase client wrapper) to call lib helpers or direct Supabase queries.
+- Keep `auth` slice (existing). Add slices only for UI/local state; prefer RTK Query for data fetching.
+- Screens should consume generated hooks to replace mock data (Home, Profile, Tweet Detail, Notifications, Messages, Lists, Edit Profile).
 
 ## Supabase access
 MCP Supabase server is reportedly configured; use it to inspect the ConnectHub project when wiring backend and Storage.
