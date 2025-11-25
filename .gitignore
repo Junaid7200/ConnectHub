@@ -39,6 +39,12 @@ yarn-error.*
 
 app-example
 
+# project docs/context (local only)
+connectHub_context.md
+database.md
+database.txt
+db_code.txt
+
 # generated native folders
 /ios
 /android
