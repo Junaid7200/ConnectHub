@@ -1,29 +1,23 @@
+import { useSignInMutation } from '@/src/store/services/authApi';
 import { Link } from 'expo-router'; // Import router
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
-import { supabase } from '../../src/lib/supabase'; // Import supabase
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const [signInMutation, { isLoading, error }] = useSignInMutation();
 
   async function onLogin() {
-    setLoading(true);
-    
-    // Call the Supabase login function
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      Alert.alert('Login Error', error.message);
-    } else {
-      // 'replace' instead of push to prevent going back to login
-      // router.replace('/(app)/home');
+    // setLoading(true);
+    try {
+      await signInMutation({ email, password }).unwrap();
     }
-    setLoading(false);
+    catch (err) {
+      Alert.alert("Error", "Failed to login. Please try again.");
+      return;
+    }
   }
 
   return (
@@ -47,7 +41,7 @@ export default function LoginScreen() {
         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
         autoCapitalize="none"
         keyboardType="email-address"
-        editable={!loading}
+        editable={!isLoading}
       />
 
       {/* Password Input */}
@@ -58,17 +52,17 @@ export default function LoginScreen() {
         placeholderTextColor="#9ca3af"
         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
         secureTextEntry // same as type="password"
-        editable={!loading} // same as disabled in react
+        editable={!isLoading} // same as disabled in react
       />
 
       {/* Login Button: in RN, we use pressable instead of button or a div with an onClick, and they have an OnPress prop */}
       <Pressable
         onPress={onLogin}
-        disabled={loading}
+        disabled={isLoading}
         className="w-full bg-blue-500 rounded-lg h-12 justify-center items-center mb-4"
       >
         <Text className="text-white text-base font-bold">
-          {loading ? 'Logging in...' : 'Login'}
+          {isLoading ? 'Logging in...' : 'Login'}
         </Text>
       </Pressable>
 

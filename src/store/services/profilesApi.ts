@@ -1,4 +1,4 @@
-import { follow, getFollowers, getFollowing, getProfileById, getProfileByUsername, getUserSettings, unfollow, updateProfile } from '@/src/lib/profiles';
+import { createProfile, follow, getFollowers, getFollowing, getProfileById, getProfileByUsername, getUserSettings, unfollow, updateProfile } from '@/src/lib/profiles';
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { supabaseBaseQuery } from './baseQuerySupabase';
 
@@ -13,11 +13,11 @@ export const profilesApi = createApi({
         }),
         getProfileByUsername: builder.query({
             query: (username: string) =>
-            getProfileByUsername(username),
+                getProfileByUsername(username),
         }),
         updateProfile: builder.mutation({
             query: ({ id, fields }: { id: string; fields: any }) =>
-            updateProfile(id, fields),
+                updateProfile(id, fields),
             invalidatesTags: (result, error, { id }) => [{ type: 'Profile', id }],
         }),
         getFollowers: builder.query({
@@ -29,16 +29,22 @@ export const profilesApi = createApi({
                 getFollowing(id),
         }),
         follow: builder.mutation({
-            query: ({followerId, followingId}: {followerId: string, followingId: string}) => follow(followerId, followingId),
+            query: ({ followerId, followingId }: { followerId: string, followingId: string }) => follow(followerId, followingId),
         }),
         unfollow: builder.mutation({
-            query: ({followerId, followingId}: {followerId: string, followingId: string}) => unfollow(followerId, followingId),
+            query: ({ followerId, followingId }: { followerId: string, followingId: string }) => unfollow(followerId, followingId),
         }),
         getUserSettings: builder.query({
             query: (profileId: string) =>
                 getUserSettings(profileId),
-        })
+        }),
+        createProfile: builder.mutation({
+            query: ({ id, username, display_name }) =>
+                createProfile({ id, username, display_name }),
+            invalidatesTags: (result) =>
+                result?.data?.id ? [{ type: 'Profile', id: result.data.id }] : [],
+        }),
     }),
 });
 
-export const { useGetProfileByIdQuery, useGetProfileByUsernameQuery, useUpdateProfileMutation, useGetFollowersQuery, useGetFollowingQuery, useFollowMutation, useUnfollowMutation, useGetUserSettingsQuery } = profilesApi;
+export const { useGetProfileByIdQuery, useGetProfileByUsernameQuery, useUpdateProfileMutation, useGetFollowersQuery, useGetFollowingQuery, useFollowMutation, useUnfollowMutation, useGetUserSettingsQuery, useCreateProfileMutation } = profilesApi;

@@ -1,35 +1,39 @@
+import { useSignUpMutation } from '@/src/store/services/authApi';
+import { useCreateProfileMutation } from '@/src/store/services/profilesApi';
 import { Link, router } from 'expo-router'; // Import router
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
-import { supabase } from '../../src/lib/supabase'; // Import supabase
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const [signUpMutation, { isLoading, error }] = useSignUpMutation();
+  const [ createProfile ] = useCreateProfileMutation();
 
   async function onSignUp() {
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      Alert.alert('Sign Up Error', error.message);
-    } else {
-      // Supabase sends a confirmation email.
-      // For this project, we can assume auto-login or just show a message.
-      Alert.alert(
-        'Success',
-        'Account created! Please check your email to confirm.'
-      );
-      // Send user to the (app) home page after successful signup
-      router.replace('/(auth)/login'); 
+    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedDisplayName = displayName.trim();
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+      Alert.alert("Invalid Username", "Username must be between 3 and 30 characters.");
+      return;
     }
-    setLoading(false);
+    try {
+      const data = await signUpMutation({ email, password }).unwrap();
+      const userId = data?.user?.id;
+      if (!userId) {
+        throw new Error('User ID not found after sign up');
+      }
+      await createProfile({ id: userId, username: trimmedUsername, display_name: trimmedDisplayName }).unwrap();
+
+      Alert.alert("Success", "Account created successfully!");
+      router.replace('/(auth)/login'); // Navigate to home screen
+    }
+    catch (err) {
+      Alert.alert("Error", "Failed to create account. Please try again.");
+    }
   }
 
   return (
@@ -51,7 +55,7 @@ export default function SignUpScreen() {
         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
         autoCapitalize="none"
         keyboardType="email-address"
-        editable={!loading}
+        editable={!isLoading}
       />
 
       <TextInput
@@ -61,16 +65,32 @@ export default function SignUpScreen() {
         placeholderTextColor="#9ca3af"
         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
         secureTextEntry
-        editable={!loading}
+        editable={!isLoading}
+      />
+      <TextInput
+        value={username}
+        onChangeText={setUsername}
+        placeholder="Username"
+        placeholderTextColor="#9ca3af"
+        className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
+        editable={!isLoading}
+      />
+      <TextInput
+        value={displayName}
+        onChangeText={setDisplayName}
+        placeholder="Display Name"
+        placeholderTextColor="#9ca3af"
+        className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
+        editable={!isLoading}
       />
 
       <Pressable
         onPress={onSignUp}
-        disabled={loading}
+        disabled={isLoading}
         className="w-full bg-blue-500 rounded-lg h-12 justify-center items-center mb-4"
       >
         <Text className="text-white text-base font-bold">
-          {loading ? 'Creating...' : 'Sign up'}
+          {isLoading ? 'Creating...' : 'Sign up'}
         </Text>
       </Pressable>
 
