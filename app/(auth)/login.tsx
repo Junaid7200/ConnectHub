@@ -10,9 +10,10 @@ export default function LoginScreen() {
   const [signInMutation, { isLoading, error }] = useSignInMutation();
 
   async function onLogin() {
-    // setLoading(true);
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
     try {
-      await signInMutation({ email, password }).unwrap();
+      await signInMutation({ email: trimmedEmail, password: trimmedPassword }).unwrap();
     }
     catch (err) {
       Alert.alert("Error", "Failed to login. Please try again.");
