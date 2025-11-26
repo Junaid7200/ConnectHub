@@ -1,12 +1,14 @@
+import { authApi } from '@/src/store/services/authApi';
 import { configureStore } from '@reduxjs/toolkit';
-// We just created this
 import authReducer from './features/auth/authSlice';
 
 export const store = configureStore({
     reducer: {
         // This connects our authSlice to the main store
         auth: authReducer,
+        [authApi.reducerPath]: authApi.reducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(authApi.middleware)
 });
 
 // These types are important for TypeScript
