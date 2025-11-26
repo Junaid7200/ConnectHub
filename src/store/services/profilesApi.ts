@@ -8,17 +8,16 @@ export const profilesApi = createApi({
     tagTypes: ['Profile'],
     endpoints: (builder) => ({
         getProfileById: builder.query({
-            query: (id: string) =>
-                getProfileById(id),
-                providesTags: (result, error, id) => [{ type: 'Profile', id }],
+            query: (id: string) => getProfileById(id),
+            providesTags: (result, error, id) => [{ type: 'Profile', id }],
         }),
         getProfileByUsername: builder.query({
             query: (username: string) =>
-                getProfileByUsername(username),
+            getProfileByUsername(username),
         }),
         updateProfile: builder.mutation({
             query: ({ id, fields }: { id: string; fields: any }) =>
-                updateProfile(id, fields),
+            updateProfile(id, fields),
             invalidatesTags: (result, error, { id }) => [{ type: 'Profile', id }],
         }),
         getFollowers: builder.query({
