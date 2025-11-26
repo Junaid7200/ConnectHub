@@ -10,8 +10,10 @@ export default function SignUpScreen() {
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
 
-  const [signUpMutation, { isLoading, error }] = useSignUpMutation();
-  const [ createProfile ] = useCreateProfileMutation();
+  const [signUpMutation, { isLoading: signingUp, error: signUpError }] = useSignUpMutation();
+  const [ createProfile, { isLoading: isCreatingProfile, error: createProfileError} ] = useCreateProfileMutation();
+
+  const isLoading = signingUp || isCreatingProfile;
 
   async function onSignUp() {
     const trimmedUsername = username.trim().toLowerCase();
