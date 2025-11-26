@@ -1,5 +1,12 @@
 import { supabase } from './supabase';
 
+
+export const createProfile = ({
+    id, username, display_name = null}: {id: string, username: string; display_name?: string | null}) => {
+    return supabase.from('profiles').insert({ id, username, display_name, avatar_url: null, banner_url: null, bio: null, link: null, location: null }).select().single();
+};
+
+
 export const getProfileById = (id: string) => {
     return supabase.from('profiles').select('*').eq('id', id).single();
 };

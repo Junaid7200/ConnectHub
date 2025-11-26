@@ -6,6 +6,8 @@ import { supabase } from '../../src/lib/supabase'; // Import supabase
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function onSignUp() {
