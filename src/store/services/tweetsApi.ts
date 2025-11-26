@@ -19,8 +19,8 @@ export const tweetsApi = createApi({
     baseQuery: supabaseBaseQuery,
     tagTypes: ['Tweet', 'Timeline'],
     endpoints: (builder) => ({
-        getHomeTimeline: builder.query<any[], { limit?: number; offset?: number }>({
-            query: ({ limit = 20, offset = 0 } = {}) => getHomeTimeline(limit, offset),
+        getHomeTimeline: builder.query<any[], { viewerId: string; limit?: number; offset?: number }>({
+            query: ({ viewerId, limit = 20, offset = 0 }) => getHomeTimeline(viewerId, limit, offset),
             providesTags: (result) =>
                 result
                     ? [

@@ -3,24 +3,10 @@
 Purpose: running context for ongoing work (what was read, observed, and planned). Keep this file updated as changes land.
 
 ## Latest updates (current session)
-- Auth bootstrap now fetches `supabase.auth.getSession()` on launch and routes accordingly; root `app/index.tsx` redirects based on Redux auth.
-- Profile screen now fetches the logged-in profile from Supabase, shows `banner_url` if present, and lets the user pick & upload a banner to Storage (`media/profiles/{userId}/banner-<timestamp>`), persisting `profiles.banner_url`.
-- Added `expo-image-picker` dependency for banner selection.
-- Added `Profile` type to `src/types/types.tsx` for schema-aligned profile data.
-- Directory structure refreshed:
-  - Routes: grouped under `app/(app)`, `(auth)`, `(settings)`, `(New)`, `(media)`; `video-player` now at `app/(media)/video-player.tsx`.
-  - Components: reorganized into `src/components/features/*` (Cards, Search with `BaseSearchBar`, New, lists, Drawer, TabHeaders) and `src/components/primitives/*` (Header, GenericHeader, Fab), plus settings components.
-  - Screens: now live under `src/components/screens` (Profile/TweetDetail/VideoPlayer), imported by thin route wrappers.
-- Supabase storage: bucket `media` created. Policies:
-  - Auth write (insert/update/delete) for `profiles/{auth.uid()}/...`
-  - Public read (anon) for `profiles/...` and `tweets/...`
-- Seed data loaded:
-  - 5 profiles linked to auth IDs; avatars set via `profiles/{id}/avatar*.png`, banner for alex.
-  - Follows seeded (6 rows).
-  - 20 tweets with replies; tweet_media seeded with 6 rows (mix images/videos) under `tweets/{tweet_id}/...`; interactions seeded (likes 4, retweets 2, bookmarks 2).
-  - Storage now has profile avatars/banners and tweet media for several tweets.
-- Supabase helpers completed in `src/lib`: auth, profiles (incl. user_settings), tweets (timeline/detail/interactions), notifications, messages (two-step conversation start with cleanup), lists, storage (avatar/banner/tweet media, getPublicUrl).
-- RTK Query chosen for data fetching; custom `supabaseBaseQuery` defined. `profilesApi` scaffolded (get/update). We’re keeping types in `src/types/types.ts` and favoring simple, flat code. Current workaround: baseQuery typed as `<any>` temporarily in profilesApi to bypass PostgrestBuilder typing.
+- Added RTK Query services for auth, profiles, tweets, notifications, messages, and lists; store registers each reducer + middleware alongside the auth slice (baseQuery intentionally kept as `any` for now).
+- `getHomeTimeline` now filters to the viewer’s own tweets plus people they follow (reverse-chron), keeping the old unfiltered version commented for reference; `tweetsApi.getHomeTimeline` now requires `viewerId`.
+- Profiles API expanded to cover follow/unfollow, followers/following, and user settings.
+- Supabase helpers remain the source of truth for data access; RTK Query endpoints now wrap them.
 
 ## Requirements (from Requirements_code_quality.md)
 - Components PascalCase; variables camelCase; types live in `src/types/types.tsx`.
@@ -39,11 +25,10 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 - RLS enabled everywhere with per-table policies; media stored in `media` bucket (tweets/messages).
 
 ## Current app state (scan)
-- Expo Router + RN; UI mostly static mocks. Supabase client configured via env; auth screens call Supabase login/signup; `_layout` now bootstraps session via `getSession` + listener.
-- Redux: only `auth` slice (User + isAuthenticated). No slices/services for tweets/profile/notifications/messages/lists/settings.
+- Expo Router + RN; Supabase client configured via env; auth screens call Supabase login/signup; `_layout` bootstraps session via `getSession` + listener and redirects via Redux auth state.
+- Redux: auth slice plus RTK Query services (authApi, profilesApi, tweetsApi, notificationsApi, messagesApi, listsApi); components not yet wired to the new hooks.
 - OneSignal: not integrated.
 - Profile screen pulls profile data for the logged-in user, displays `banner_url`, and supports banner upload to Storage; still uses static placeholder tweets/bio when data absent.
-- `app/index.tsx` now redirects based on Redux auth state.
 - Routes: tabs under `app/(app)`, modals under `(New)` and `(settings)`, video-player route sits at `app/video-player.tsx`.
 - Storage policies applied to `media` bucket (see Latest updates).
 - Seed data present in DB and Storage (avatars/banners/tweet media).
@@ -59,12 +44,11 @@ Purpose: running context for ongoing work (what was read, observed, and planned)
 - `src/lib` for supabase client/utils; `src/hooks` for typed hooks; `src/store` for root store/slices; `src/assets` if desired.
 
 ## Immediate priorities
-1) Wire media paths: ensure `tweet_media` rows match real storage paths; stray thumbnail_url cleared.
-2) Add supabase data layer: TS helpers (done) + RTK Query services for profiles, tweets/media/interactions, notifications, messages, lists, settings (place under `src/store/services`).
-3) Implement `src/lib/storage.ts`: uploadProfileAvatar, uploadProfileBanner, uploadTweetMedia (multi), getPublicUrl.
-4) Solidify profile flow: add profile slice + avatar/banner upload helpers; wire “Edit profile” button in `ProfileScreen` to an edit screen/form that uses these helpers to update profile fields and media.
-5) OneSignal: integrate SDK, persist `onesignal_player_id`, respect `user_settings`.
-6) Optionally reorganize into feature folders as data wiring progresses.
+1) Wire media paths: ensure `tweet_media` rows match real storage paths; clear stray `thumbnail_url`.
+2) Hook screens to RTK Query services (profiles/tweets/notifications/messages/lists); replace static mocks with data.
+3) Solidify profile flow: add profile slice as needed for UI state; wire Edit Profile route; reuse storage helpers for avatar/banner.
+4) OneSignal: integrate SDK, persist `onesignal_player_id`, respect `user_settings`.
+5) Optionally reorganize into feature folders as data wiring progresses.
 
 ## RTK Query plan (next steps)
 - Structure: `src/store/services/{auth,profiles,tweets,notifications,messages,lists}.ts` using `createApi` with a simple custom `supabaseBaseQuery` that accepts a `SupabaseQuery` type defined in `src/types/types.ts`.
