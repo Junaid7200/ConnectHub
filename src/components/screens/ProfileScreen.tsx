@@ -14,7 +14,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
-
 const profileAvatar = require('@/assets/images/project_images/p1.png');
 
 
@@ -237,7 +236,7 @@ export default function ProfileScreen() {
             <Avatar source={avatarSource as any} name={displayName} size={86} />
           </View>
         </View>
-        <Pressable style={styles.editButton}>
+        <Pressable style={styles.editButton} onPress={() => router.push("/(settings)/edit-profile")}>
           <Text style={styles.editButtonText}>Edit profile</Text>
         </Pressable>
       </View>

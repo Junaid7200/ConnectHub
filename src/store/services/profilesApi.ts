@@ -1,4 +1,4 @@
-import { supabase } from '@/src/lib/supabase';
+import { follow, getFollowers, getFollowing, getProfileById, getProfileByUsername, getUserSettings, unfollow, updateProfile } from '@/src/lib/profiles';
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { supabaseBaseQuery } from './baseQuerySupabase';
 
@@ -7,17 +7,39 @@ export const profilesApi = createApi({
     baseQuery: supabaseBaseQuery,
     tagTypes: ['Profile'],
     endpoints: (builder) => ({
-        getProfile: builder.query({
+        getProfileById: builder.query({
             query: (id: string) =>
-                supabase.from('profiles').select('*').eq('id', id).single(),
-            providesTags: (result, error, id) => [{ type: 'Profile', id }],
+                getProfileById(id),
+                providesTags: (result, error, id) => [{ type: 'Profile', id }],
+        }),
+        getProfileByUsername: builder.query({
+            query: (username: string) =>
+                getProfileByUsername(username),
         }),
         updateProfile: builder.mutation({
             query: ({ id, fields }: { id: string; fields: any }) =>
-                supabase.from('profiles').update(fields).eq('id', id).select().single(),
+                updateProfile(id, fields),
             invalidatesTags: (result, error, { id }) => [{ type: 'Profile', id }],
         }),
+        getFollowers: builder.query({
+            query: (id: string) =>
+                getFollowers(id),
+        }),
+        getFollowing: builder.query({
+            query: (id: string) =>
+                getFollowing(id),
+        }),
+        follow: builder.mutation({
+            query: ({followerId, followingId}: {followerId: string, followingId: string}) => follow(followerId, followingId),
+        }),
+        unfollow: builder.mutation({
+            query: ({followerId, followingId}: {followerId: string, followingId: string}) => unfollow(followerId, followingId),
+        }),
+        getUserSettings: builder.query({
+            query: (profileId: string) =>
+                getUserSettings(profileId),
+        })
     }),
 });
 
-export const { useGetProfileQuery, useUpdateProfileMutation } = profilesApi;
+export const { useGetProfileByIdQuery, useGetProfileByUsernameQuery, useUpdateProfileMutation, useGetFollowersQuery, useGetFollowingQuery, useFollowMutation, useUnfollowMutation, useGetUserSettingsQuery } = profilesApi;
