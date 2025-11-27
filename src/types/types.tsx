@@ -65,6 +65,7 @@ export type TweetCardProps = {
   onSharePress?: () => void;
   onLikeToggle?: (liked: boolean) => void;
   showActivityIcon?: boolean;
+  initialLiked?: boolean;
   pinned?: boolean;
 };
 

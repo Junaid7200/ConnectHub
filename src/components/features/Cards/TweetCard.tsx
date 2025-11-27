@@ -1,21 +1,38 @@
-import Avatar from '@/src/components/primitives/Header/avatar';
-import { MediaItem, TweetCardProps } from '@/src/types/types';
-import { Asset } from 'expo-asset';
-import { useRouter } from 'expo-router';
-import { BarChart3, ChevronDown, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Linking, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import { SvgUri } from 'react-native-svg';
+import Avatar from "@/src/components/primitives/Header/avatar";
+import { MediaItem, TweetCardProps } from "@/src/types/types";
+import { Asset } from "expo-asset";
+import { useRouter } from "expo-router";
+import {
+  BarChart3,
+  ChevronDown,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Upload,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SvgUri } from "react-native-svg";
 
 // Simple helper to keep numbers short (e.g., 1200 -> 1.2K)
 const formatCount = (value: number) => {
   if (value < 1000) return `${value}`;
-  if (value < 1_000_000) return `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}K`;
+  if (value < 1_000_000)
+    return `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}K`;
   return `${(value / 1_000_000).toFixed(1)}M`;
 };
 
 const linkPattern = /((?:https?:\/\/|www\.)\S+|#[\w]+|@\w+)/g;
-const twitterBlue = '#4C9EEB';
+const twitterBlue = "#4C9EEB";
 
 export default function TweetCard({
   displayName,
@@ -38,6 +55,7 @@ export default function TweetCard({
   onSharePress,
   onLikeToggle,
   showActivityIcon,
+  initialLiked,
 }: TweetCardProps) {
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -45,15 +63,23 @@ export default function TweetCard({
   const [thumbUri, setThumbUri] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof initialLiked === "boolean") {
+      setLiked(initialLiked);
+    }
+  }, [initialLiked]);
+
+  useEffect(() => {
     const maybeGenerateThumb = async () => {
       const firstMedia = media?.[0];
-      const uri = (firstMedia?.type === 'video' && (firstMedia.source as any)?.uri) || null;
+      const uri =
+        (firstMedia?.type === "video" && (firstMedia.source as any)?.uri) ||
+        null;
       if (!uri || firstMedia?.poster) {
         setThumbUri(null);
         return;
       }
       try {
-        const { getThumbnailAsync } = await import('expo-video-thumbnails');
+        const { getThumbnailAsync } = await import("expo-video-thumbnails");
         const result = await getThumbnailAsync(uri, { time: 0 });
         setThumbUri(result?.uri ?? null);
       } catch {
@@ -64,31 +90,44 @@ export default function TweetCard({
   }, [media]);
 
   const likedText =
-    typeof likedBy === 'string' ? likedBy : likedBy?.length ? likedBy.join(' and ') : undefined;
+    typeof likedBy === "string"
+      ? likedBy
+      : likedBy?.length
+        ? likedBy.join(" and ")
+        : undefined;
 
   const avatarSource = avatar
     ? avatar
     : avatarUrl
       ? { uri: avatarUrl }
       : undefined;
+  // console.log(avatarSource);
 
   const verifiedUri = useMemo(
-    () => Asset.fromModule(require('@/assets/images/project_images/verified.svg')).uri,
+    () =>
+      Asset.fromModule(require("@/assets/images/project_images/verified.svg"))
+        .uri,
     []
   );
 
   const headerMeta = retweetedBy
-    ? { icon: <Repeat2 size={16} color="#657786" />, text: `${retweetedBy} Retweeted` }
+    ? {
+        icon: <Repeat2 size={16} color="#657786" />,
+        text: `${retweetedBy} Retweeted`,
+      }
     : likedText
-      ? { icon: <Heart size={16} color="#657786" fill="#657786" />, text: `${likedText} liked` }
+      ? {
+          icon: <Heart size={16} color="#657786" fill="#657786" />,
+          text: `${likedText} liked`,
+        }
       : null;
 
   const handleLinkPress = useCallback((value: string) => {
-    if (value.startsWith('http')) {
+    if (value.startsWith("http")) {
       Linking.openURL(value).catch(() => {});
       return;
     }
-    if (value.startsWith('www.')) {
+    if (value.startsWith("www.")) {
       Linking.openURL(`https://${value}`).catch(() => {});
       return;
     }
@@ -127,11 +166,16 @@ export default function TweetCard({
   );
 
   const renderMedia = useCallback(
-    (item: MediaItem, navRouter?: ReturnType<typeof useRouter>, thumb?: string | null) => {
-      if (item.type === 'image') {
+    (
+      item: MediaItem,
+      navRouter?: ReturnType<typeof useRouter>,
+      thumb?: string | null
+    ) => {
+      if (item.type === "image") {
         return <Image source={item.source as any} style={styles.mediaImage} />;
       }
 
+console.log('Rendering media item', item.source);
       const nav = navRouter ?? router;
       const uri = (item.source as any)?.uri;
       if (!uri) {
@@ -146,15 +190,17 @@ export default function TweetCard({
         <Pressable
           onPress={() => {
             nav.push({
-              pathname: '/(media)/video-player',
+              pathname: "/(media)/video-player",
               params: { src: uri },
             });
           }}
         >
-          {item.poster || thumb ? (
-            <Image source={(item.poster as any) || ({ uri: thumb! } as any)} style={styles.mediaImage} />
+          {item.poster ? (
+            <Image source={item.poster as any} style={styles.mediaImage} />
+          ) : thumb ? (
+            <Image source={{ uri: thumb }} style={styles.mediaImage} />
           ) : (
-            <View style={styles.mediaImage}>
+            <View style={styles.videoPlaceholder}>
               <Text style={styles.videoPlaceholderText}>Video</Text>
             </View>
           )}
@@ -179,11 +225,21 @@ export default function TweetCard({
 
         <View style={styles.bodyRow}>
           <View style={styles.avatarColumn}>
-            <Avatar source={avatarSource} name={displayName} size={52} style={styles.avatar} />
+            <Avatar
+              source={avatarSource}
+              name={displayName}
+              size={52}
+              style={styles.avatar}
+            />
             {showThread && (
               <>
                 <View style={styles.threadLine} />
-                <Avatar source={avatarSource} name={displayName} size={34} style={styles.threadAvatar} />
+                <Avatar
+                  source={avatarSource}
+                  name={displayName}
+                  size={34}
+                  style={styles.threadAvatar}
+                />
               </>
             )}
           </View>
@@ -200,7 +256,7 @@ export default function TweetCard({
                 />
               )}
               <Text style={styles.username}>
-                {' '}
+                {" "}
                 @{username} · {time}
               </Text>
               <View style={styles.titleSpacer} />
@@ -210,11 +266,28 @@ export default function TweetCard({
             {renderTweetText(text)}
 
             {media && media.length > 0 ? (
-              <View style={styles.mediaWrapper}>{renderMedia(media[0], router, thumbUri)}</View>
+              <View style={styles.mediaWrapper}>
+                {media.map((m, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.mediaItem,
+                      idx !== media.length - 1 && { marginBottom: 8 },
+                    ]}
+                  >
+                    {renderMedia(m, router, thumbUri)}
+                  </View>
+                ))}
+              </View>
             ) : null}
 
             {!hideEngagement && (
-              <View style={[styles.engagementRow, showActivityIcon && styles.engagementRowWide]}>
+              <View
+                style={[
+                  styles.engagementRow,
+                  showActivityIcon && styles.engagementRowWide,
+                ]}
+              >
                 <EngagementItem
                   icon={<MessageCircle size={18} color="#657786" />}
                   count={counts.replies}
@@ -222,10 +295,10 @@ export default function TweetCard({
                     onPressComment
                       ? onPressComment
                       : () =>
-                        router.push({
-                          pathname: '/(app)/tweet-detail',
-                          params: { variant: isOwnTweet ? 'mine' : 'other' },
-                        })
+                          router.push({
+                            pathname: "/(app)/tweet-detail",
+                            params: { variant: isOwnTweet ? "mine" : "other" },
+                          })
                   }
                 />
                 <EngagementItem
@@ -234,7 +307,13 @@ export default function TweetCard({
                   onPress={() => setShowRetweetSheet(true)}
                 />
                 <EngagementItem
-                  icon={<Heart size={18} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />}
+                  icon={
+                    <Heart
+                      size={18}
+                      color={liked ? "#CE395F" : "#657786"}
+                      fill={liked ? "#CE395F" : "none"}
+                    />
+                  }
                   count={counts.likes + (liked ? 1 : 0)}
                   onPress={() => {
                     setLiked((prev) => {
@@ -260,13 +339,18 @@ export default function TweetCard({
                   }
                 />
                 {showActivityIcon && (
-                  <EngagementItem icon={<BarChart3 size={18} color="#657786" />} />
+                  <EngagementItem
+                    icon={<BarChart3 size={18} color="#657786" />}
+                  />
                 )}
               </View>
             )}
 
             {showThread && (
-              <Pressable onPress={onPressThread} style={styles.threadLinkWrapper}>
+              <Pressable
+                onPress={onPressThread}
+                style={styles.threadLinkWrapper}
+              >
                 <Text style={styles.threadLink}>Show this thread</Text>
               </Pressable>
             )}
@@ -274,7 +358,10 @@ export default function TweetCard({
         </View>
       </View>
 
-      <RetweetSheet visible={showRetweetSheet} onClose={() => setShowRetweetSheet(false)} />
+      <RetweetSheet
+        visible={showRetweetSheet}
+        onClose={() => setShowRetweetSheet(false)}
+      />
     </>
   );
 }
@@ -291,13 +378,19 @@ function EngagementItem({
   const content = (
     <View style={styles.engagementItem}>
       {icon}
-      {typeof count === 'number' && <Text style={styles.engagementText}>{formatCount(count)}</Text>}
+      {typeof count === "number" && (
+        <Text style={styles.engagementText}>{formatCount(count)}</Text>
+      )}
     </View>
   );
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={styles.engagementPressable} hitSlop={6}>
+      <Pressable
+        onPress={onPress}
+        style={styles.engagementPressable}
+        hitSlop={6}
+      >
         {content}
       </Pressable>
     );
@@ -306,23 +399,45 @@ function EngagementItem({
   return content;
 }
 
-function RetweetSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function RetweetSheet({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
   const retweetCommentUri = useMemo(
-    () => Asset.fromModule(require('@/assets/images/project_images/retweetWithComment.svg')).uri,
+    () =>
+      Asset.fromModule(
+        require("@/assets/images/project_images/retweetWithComment.svg")
+      ).uri,
     []
   );
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={styles.sheetOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheetContainer}>
           <View style={styles.sheetHandle} />
-          <Pressable style={styles.sheetRow} onPress={onClose} android_ripple={{ color: '#E7ECF0' }}>
+          <Pressable
+            style={styles.sheetRow}
+            onPress={onClose}
+            android_ripple={{ color: "#E7ECF0" }}
+          >
             <Repeat2 size={22} color="#657786" />
             <Text style={styles.sheetRowText}>Retweet</Text>
           </Pressable>
-          <Pressable style={styles.sheetRow} onPress={onClose} android_ripple={{ color: '#E7ECF0' }}>
+          <Pressable
+            style={styles.sheetRow}
+            onPress={onClose}
+            android_ripple={{ color: "#E7ECF0" }}
+          >
             <SvgUri uri={retweetCommentUri} width={22} height={22} />
             <Text style={styles.sheetRowText}>Retweet with comment</Text>
           </Pressable>
@@ -341,29 +456,29 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E1E8ED',
-    backgroundColor: '#FFFFFF',
-    width: '100%',
-    alignSelf: 'stretch',
+    borderBottomColor: "#E1E8ED",
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    alignSelf: "stretch",
   },
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
     columnGap: 6,
     paddingLeft: 58, // offset so it isn't directly above the avatar
   },
   metaText: {
-    color: '#657786',
+    color: "#657786",
     fontSize: 14,
   },
   bodyRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   avatarColumn: {
     width: 58, // avatar (52) + right margin
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 8,
   },
   avatar: {
@@ -373,18 +488,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'nowrap',
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "nowrap",
     columnGap: 4,
   },
   titleSpacer: {
     flex: 1,
   },
   displayName: {
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 16,
-    color: '#0F1419',
+    color: "#0F1419",
     marginRight: 4,
   },
   verifiedIcon: {
@@ -392,13 +507,13 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 14,
-    color: '#657786',
+    color: "#657786",
     flexShrink: 1,
     marginRight: 6,
   },
   text: {
     fontSize: 15,
-    color: '#0F1419',
+    color: "#0F1419",
     lineHeight: 22,
     marginTop: 4,
     marginBottom: 8,
@@ -409,31 +524,34 @@ const styles = StyleSheet.create({
   mediaWrapper: {
     marginTop: 8,
     marginBottom: 8,
+  },
+  mediaItem: {
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#E1E8ED',
+    overflow: "hidden",
+    backgroundColor: "#E1E8ED",
   },
   mediaImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    resizeMode: 'cover',
+    resizeMode: "cover",
+    backgroundColor: "#E1E8ED",
   },
   videoPlaceholder: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    backgroundColor: '#E7ECF0',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#E7ECF0",
+    alignItems: "center",
+    justifyContent: "center",
   },
   videoPlaceholderText: {
-    color: '#657786',
-    fontWeight: '600',
+    color: "#657786",
+    fontWeight: "600",
   },
   playOverlay: {
-    position: 'absolute',
+    position: "absolute",
     inset: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   playTriangle: {
     width: 0,
@@ -441,23 +559,23 @@ const styles = StyleSheet.create({
     borderLeftWidth: 14,
     borderTopWidth: 10,
     borderBottomWidth: 10,
-    borderLeftColor: '#FFFFFF',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
+    borderLeftColor: "#FFFFFF",
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
   },
   engagementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     columnGap: 24, // tighter spacing
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 4,
   },
   engagementRowWide: {
     // columnGap: 18,
   },
   engagementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     columnGap: 10,
   },
   engagementPressable: {
@@ -466,20 +584,20 @@ const styles = StyleSheet.create({
   },
   engagementText: {
     fontSize: 14,
-    color: '#657786',
+    color: "#657786",
   },
   threadLinkWrapper: {
     marginTop: 8,
   },
   threadLink: {
-    color: '#4C9EEB',
+    color: "#4C9EEB",
     fontSize: 15,
   },
   threadLine: {
     width: 2,
     flexGrow: 1,
     minHeight: 42,
-    backgroundColor: '#E1E8ED',
+    backgroundColor: "#E1E8ED",
     marginVertical: 4,
   },
   threadAvatar: {
@@ -490,11 +608,11 @@ const styles = StyleSheet.create({
   },
   sheetOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
   },
   sheetContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: 24,
@@ -502,35 +620,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   sheetHandle: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CED5DC',
+    backgroundColor: "#CED5DC",
     marginBottom: 4,
   },
   sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 20,
   },
   sheetRowText: {
     marginLeft: 14,
     fontSize: 17,
-    color: '#0F1419',
+    color: "#0F1419",
   },
   sheetCancel: {
     marginTop: 4,
     marginHorizontal: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 999,
-    backgroundColor: '#E7ECF0',
+    backgroundColor: "#E7ECF0",
   },
   sheetCancelText: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#0F1419',
+    fontWeight: "600",
+    color: "#0F1419",
   },
 });

@@ -2,10 +2,12 @@ import { useSignInMutation } from '@/src/store/services/authApi';
 import { Link } from 'expo-router'; // Import router
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [signInMutation, { isLoading, error }] = useSignInMutation();
 
@@ -46,15 +48,20 @@ export default function LoginScreen() {
       />
 
       {/* Password Input */}
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor="#9ca3af"
-        className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
-        secureTextEntry // same as type="password"
-        editable={!isLoading} // same as disabled in react
-      />
+      <View className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 flex-row items-center">
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor="#9ca3af"
+          className="flex-1 text-base"
+          secureTextEntry={!showPassword}
+          editable={!isLoading}
+        />
+        <Pressable onPress={() => setShowPassword((p) => !p)} hitSlop={8}>
+          {showPassword ? <EyeOff size={20} color="#4B5563" /> : <Eye size={20} color="#4B5563" />}
+        </Pressable>
+      </View>
 
       {/* Login Button: in RN, we use pressable instead of button or a div with an onClick, and they have an OnPress prop */}
       <Pressable

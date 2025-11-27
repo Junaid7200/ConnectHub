@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import { useState } from 'react';
 import {
   Image,
   ImageSourcePropType,
@@ -61,6 +62,7 @@ export default function Avatar({
   size = 32,
   style,
 }: ProfileAvatarProps) {
+  const [loadError, setLoadError] = useState(false);
   const avatarSource: ImageSourcePropType | undefined =
     source || (imageUrl ? { uri: imageUrl } : undefined);
 
@@ -85,10 +87,23 @@ export default function Avatar({
 
   const initialsSize = Math.max(12, size * 0.44);
 
+// console.log(loadError);
+
   const content = (
     <View style={[styles.wrapper, wrapperStyle, style]}>
-      {avatarSource ? (
-        <Image source={avatarSource} style={[styles.avatarBase, avatarStyle]} resizeMode="cover" />
+      {avatarSource && !loadError ? (
+        <Image
+          source={avatarSource}
+          style={[styles.avatarBase, avatarStyle]}
+          resizeMode="cover"
+          onError={(e) => {
+            console.warn('Avatar load error', {
+              uri: (avatarSource as any)?.uri,
+              error: e?.nativeEvent?.error,
+            });
+            setLoadError(true);
+          }}
+        />
       ) : (
         <FallbackAvatar name={name} size={size} style={avatarStyle} initialsSize={initialsSize} />
       )}

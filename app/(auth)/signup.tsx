@@ -3,12 +3,14 @@ import { useCreateProfileMutation } from '@/src/store/services/profilesApi';
 import { Link, router } from 'expo-router'; // Import router
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [signUpMutation, { isLoading: signingUp, error: signUpError }] = useSignUpMutation();
   const [ createProfile, { isLoading: isCreatingProfile, error: createProfileError} ] = useCreateProfileMutation();
@@ -31,8 +33,13 @@ export default function SignUpScreen() {
       }
       await createProfile({ id: userId, username: trimmedUsername, display_name: trimmedDisplayName || null }).unwrap();
 
-      Alert.alert("Success", "Account created successfully!");
-      router.replace('/(auth)/login'); // Navigate to home screen
+      const hasSession = !!data?.session;
+      Alert.alert("Success", hasSession ? "Signed up and signed in!" : "Account created successfully!");
+      if (hasSession) {
+        router.replace('/(app)/home');
+      } else {
+        router.replace('/(auth)/login');
+      }
     }
     catch (err) {
       Alert.alert("Error", "Failed to create account. Please try again.");
@@ -61,15 +68,20 @@ export default function SignUpScreen() {
         editable={!isLoading}
       />
 
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor="#9ca3af"
-        className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 text-base"
-        secureTextEntry
-        editable={!isLoading}
-      />
+      <View className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4 flex-row items-center">
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor="#9ca3af"
+          className="flex-1 text-base"
+          secureTextEntry={!showPassword}
+          editable={!isLoading}
+        />
+        <Pressable onPress={() => setShowPassword((p) => !p)} hitSlop={8}>
+          {showPassword ? <EyeOff size={20} color="#4B5563" /> : <Eye size={20} color="#4B5563" />}
+        </Pressable>
+      </View>
       <TextInput
         value={username}
         onChangeText={setUsername}

@@ -27,6 +27,7 @@ export const getHomeTimeline = async (viewerId: string, limit = 20, offset = 0) 
         .select(
             'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
         )
+        .is('parent_tweet_id', null) // only root tweets
         .in('author_id', authorIds)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
