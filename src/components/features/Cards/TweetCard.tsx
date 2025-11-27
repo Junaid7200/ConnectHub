@@ -34,28 +34,7 @@ const formatCount = (value: number) => {
 const linkPattern = /((?:https?:\/\/|www\.)\S+|#[\w]+|@\w+)/g;
 const twitterBlue = "#4C9EEB";
 
-export default function TweetCard({
-  displayName,
-  username,
-  time,
-  text,
-  avatarUrl,
-  avatar,
-  verified = false,
-  likedBy,
-  retweetedBy,
-  counts,
-  showThread = false,
-  onPressThread,
-  containerStyle,
-  media,
-  isOwnTweet,
-  onPressComment,
-  hideEngagement,
-  onSharePress,
-  onLikeToggle,
-  showActivityIcon,
-  initialLiked,
+export default function TweetCard({displayName,username,time,text,avatarUrl,avatar,verified = false,likedBy,retweetedBy,counts,showThread = false,onPressThread,containerStyle,media,isOwnTweet,onPressComment,hideEngagement,onSharePress,onLikeToggle,showActivityIcon,initialLiked,
 }: TweetCardProps) {
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -172,12 +151,14 @@ export default function TweetCard({
       thumb?: string | null
     ) => {
       if (item.type === "image") {
+        console.log('Rendering image item', item.source);
         return <Image source={item.source as any} style={styles.mediaImage} />;
       }
+      // console.log('Rendering media item', item.source);
 
-console.log('Rendering media item', item.source);
       const nav = navRouter ?? router;
       const uri = (item.source as any)?.uri;
+      console.log('Media URI:', uri);
       if (!uri) {
         return (
           <View style={styles.videoPlaceholder}>
@@ -201,7 +182,7 @@ console.log('Rendering media item', item.source);
             <Image source={{ uri: thumb }} style={styles.mediaImage} />
           ) : (
             <View style={styles.videoPlaceholder}>
-              <Text style={styles.videoPlaceholderText}>Video</Text>
+              <Text style={styles.videoPlaceholderText}>Video (tap to play)</Text>
             </View>
           )}
           <View style={styles.playOverlay}>
