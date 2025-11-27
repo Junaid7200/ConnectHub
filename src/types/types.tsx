@@ -66,6 +66,11 @@ export type TweetCardProps = {
   onLikeToggle?: (liked: boolean) => void;
   showActivityIcon?: boolean;
   initialLiked?: boolean;
+  initialRetweeted?: boolean;
+  initialBookmarked?: boolean;
+  onRetweetToggle?: (retweeted: boolean) => void;
+  onBookmarkToggle?: (bookmarked: boolean) => void;
+  onQuoteRetweet?: () => void;
   pinned?: boolean;
 };
 

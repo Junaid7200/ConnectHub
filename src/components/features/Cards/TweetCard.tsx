@@ -7,10 +7,11 @@ import {
   ChevronDown,
   Heart,
   MessageCircle,
+  Pencil,
   Repeat2,
   Upload,
 } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   Linking,
@@ -35,38 +36,98 @@ const linkPattern = /((?:https?:\/\/|www\.)\S+|#[\w]+|@\w+)/g;
 const twitterBlue = "#4C9EEB";
 
 export default function TweetCard({displayName,username,time,text,avatarUrl,avatar,verified = false,likedBy,retweetedBy,counts,showThread = false,onPressThread,containerStyle,media,isOwnTweet,onPressComment,hideEngagement,onSharePress,onLikeToggle,showActivityIcon,initialLiked,
+  initialRetweeted,
+  initialBookmarked,
+  onRetweetToggle,
+  onBookmarkToggle,
+  onQuoteRetweet,
 }: TweetCardProps) {
+  const [liked, setLiked] = useState(initialLiked ?? false);
+  const [retweeted, setRetweeted] = useState(initialRetweeted ?? false);
+  const [bookmarked, setBookmarked] = useState(initialBookmarked ?? false);
   const [showRetweetSheet, setShowRetweetSheet] = useState(false);
-  const [liked, setLiked] = useState(false);
   const router = useRouter();
-  const [thumbUri, setThumbUri] = useState<string | null>(null);
+  const [thumbMap, setThumbMap] = useState<Record<number, string>>({});
+  const hasInteracted = useRef({ like: false, retweet: false, bookmark: false });
 
   useEffect(() => {
-    if (typeof initialLiked === "boolean") {
-      setLiked(initialLiked);
+    if (!hasInteracted.current.like) {
+      setLiked(initialLiked ?? false);
     }
   }, [initialLiked]);
 
   useEffect(() => {
-    const maybeGenerateThumb = async () => {
-      const firstMedia = media?.[0];
-      const uri =
-        (firstMedia?.type === "video" && (firstMedia.source as any)?.uri) ||
-        null;
-      if (!uri || firstMedia?.poster) {
-        setThumbUri(null);
+    if (!hasInteracted.current.retweet) {
+      setRetweeted(initialRetweeted ?? false);
+    }
+  }, [initialRetweeted]);
+
+  useEffect(() => {
+    if (!hasInteracted.current.bookmark) {
+      setBookmarked(initialBookmarked ?? false);
+    }
+  }, [initialBookmarked]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const generateThumbs = async () => {
+      if (!media?.length) {
+        setThumbMap({});
         return;
       }
       try {
         const { getThumbnailAsync } = await import("expo-video-thumbnails");
-        const result = await getThumbnailAsync(uri, { time: 0 });
-        setThumbUri(result?.uri ?? null);
+        const entries: Array<[number, string] | null> = await Promise.all(
+          media.map(async (item, idx) => {
+            const uri = (item.source as any)?.uri;
+            if (item.type !== "video" || item.poster || !uri) return null;
+            try {
+              const result = await getThumbnailAsync(uri, { time: 0 });
+              return result?.uri ? [idx, result.uri] : null;
+            } catch {
+              return null;
+            }
+          })
+        );
+        if (cancelled) return;
+        const next: Record<number, string> = {};
+        entries.forEach((entry) => {
+          if (entry) {
+            const [idx, uri] = entry;
+            next[idx] = uri;
+          }
+        });
+        setThumbMap(next);
       } catch {
-        setThumbUri(null);
+        if (!cancelled) setThumbMap({});
       }
     };
-    maybeGenerateThumb();
+    generateThumbs();
+    return () => {
+      cancelled = true;
+    };
   }, [media]);
+
+  const handleLikePress = useCallback(() => {
+    const next = !liked;
+    setLiked(next);
+    hasInteracted.current.like = true;
+    onLikeToggle?.(next);
+  }, [liked, onLikeToggle]);
+
+  const handleRetweetPress = useCallback(() => {
+    const next = !retweeted;
+    setRetweeted(next);
+    hasInteracted.current.retweet = true;
+    onRetweetToggle?.(next);
+  }, [retweeted, onRetweetToggle]);
+
+  const handleBookmarkPress = useCallback(() => {
+    const next = !bookmarked;
+    setBookmarked(next);
+    hasInteracted.current.bookmark = true;
+    onBookmarkToggle?.(next);
+  }, [bookmarked, onBookmarkToggle]);
 
   const likedText =
     typeof likedBy === "string"
@@ -98,8 +159,12 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
       ? {
           icon: <Heart size={16} color="#657786" fill="#657786" />,
           text: `${likedText} liked`,
-        }
-      : null;
+      }
+    : null;
+
+  const likeCount = counts.likes ?? 0;
+  const retweetCount = counts.retweets ?? 0;
+  const bookmarkCount = counts.shares ?? 0;
 
   const handleLinkPress = useCallback((value: string) => {
     if (value.startsWith("http")) {
@@ -147,18 +212,15 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
   const renderMedia = useCallback(
     (
       item: MediaItem,
-      navRouter?: ReturnType<typeof useRouter>,
-      thumb?: string | null
+      idx: number,
+      navRouter?: ReturnType<typeof useRouter>
     ) => {
+      const thumb = thumbMap[idx];
       if (item.type === "image") {
-        console.log('Rendering image item', item.source);
         return <Image source={item.source as any} style={styles.mediaImage} />;
       }
-      // console.log('Rendering media item', item.source);
-
       const nav = navRouter ?? router;
       const uri = (item.source as any)?.uri;
-      console.log('Media URI:', uri);
       if (!uri) {
         return (
           <View style={styles.videoPlaceholder}>
@@ -191,7 +253,7 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
         </Pressable>
       );
     },
-    [router]
+    [router, thumbMap]
   );
 
   return (
@@ -256,7 +318,7 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
                       idx !== media.length - 1 && { marginBottom: 8 },
                     ]}
                   >
-                    {renderMedia(m, router, thumbUri)}
+                    {renderMedia(m, idx, router)}
                   </View>
                 ))}
               </View>
@@ -283,8 +345,13 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
                   }
                 />
                 <EngagementItem
-                  icon={<Repeat2 size={18} color="#657786" />}
-                  count={counts.retweets}
+                  icon={
+                    <Repeat2
+                      size={18}
+                      color={retweeted ? "#0FA958" : "#657786"}
+                    />
+                  }
+                  count={retweetCount}
                   onPress={() => setShowRetweetSheet(true)}
                 />
                 <EngagementItem
@@ -295,28 +362,29 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
                       fill={liked ? "#CE395F" : "none"}
                     />
                   }
-                  count={counts.likes + (liked ? 1 : 0)}
-                  onPress={() => {
-                    setLiked((prev) => {
-                      const next = !prev;
-                      onLikeToggle?.(next);
-                      return next;
-                    });
-                  }}
+                  count={likeCount}
+                  onPress={handleLikePress}
                 />
                 <EngagementItem
-                  icon={<Upload size={18} color="#657786" />}
-                  count={counts.shares ?? 0}
+                  icon={
+                    <Upload
+                      size={18}
+                      color={bookmarked ? "#4C9EEB" : "#657786"}
+                    />
+                  }
+                  count={bookmarkCount}
                   onPress={
-                    onSharePress
-                      ? onSharePress
-                      : async () => {
-                          try {
-                            await Share.share({ message: text });
-                          } catch {
-                            // no-op
+                    onBookmarkToggle
+                      ? handleBookmarkPress
+                      : onSharePress
+                        ? onSharePress
+                        : async () => {
+                            try {
+                              await Share.share({ message: text });
+                            } catch {
+                              // no-op
+                            }
                           }
-                        }
                   }
                 />
                 {showActivityIcon && (
@@ -342,6 +410,9 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
       <RetweetSheet
         visible={showRetweetSheet}
         onClose={() => setShowRetweetSheet(false)}
+        onRetweet={handleRetweetPress}
+        onQuoteRetweet={onQuoteRetweet}
+        isRetweeted={retweeted}
       />
     </>
   );
@@ -383,18 +454,16 @@ function EngagementItem({
 function RetweetSheet({
   visible,
   onClose,
+  onRetweet,
+  onQuoteRetweet,
+  isRetweeted,
 }: {
   visible: boolean;
   onClose: () => void;
+  onRetweet: () => void;
+  onQuoteRetweet?: () => void;
+  isRetweeted: boolean;
 }) {
-  const retweetCommentUri = useMemo(
-    () =>
-      Asset.fromModule(
-        require("@/assets/images/project_images/retweetWithComment.svg")
-      ).uri,
-    []
-  );
-
   return (
     <Modal
       transparent
@@ -408,18 +477,28 @@ function RetweetSheet({
           <View style={styles.sheetHandle} />
           <Pressable
             style={styles.sheetRow}
-            onPress={onClose}
-            android_ripple={{ color: "#E7ECF0" }}
+            onPress={() => {
+              onRetweet();
+              onClose();
+            }}
           >
-            <Repeat2 size={22} color="#657786" />
-            <Text style={styles.sheetRowText}>Retweet</Text>
+            <Repeat2
+              size={22}
+              color={isRetweeted ? "#0FA958" : "#657786"}
+              style={styles.sheetIcon}
+            />
+            <Text style={styles.sheetRowText}>
+              {isRetweeted ? "Undo Retweet" : "Retweet"}
+            </Text>
           </Pressable>
           <Pressable
             style={styles.sheetRow}
-            onPress={onClose}
-            android_ripple={{ color: "#E7ECF0" }}
+            onPress={() => {
+              onQuoteRetweet?.();
+              onClose();
+            }}
           >
-            <SvgUri uri={retweetCommentUri} width={22} height={22} />
+            <Pencil size={22} color="#657786" style={styles.sheetIcon} />
             <Text style={styles.sheetRowText}>Retweet with comment</Text>
           </Pressable>
           <Pressable style={styles.sheetCancel} onPress={onClose}>
@@ -602,27 +681,29 @@ const styles = StyleSheet.create({
   },
   sheetHandle: {
     alignSelf: "center",
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#CED5DC",
-    marginBottom: 4,
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#D3D9DE",
+    marginBottom: 8,
   },
   sheetRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 20,
   },
+  sheetIcon: {
+    marginRight: 14,
+  },
   sheetRowText: {
-    marginLeft: 14,
     fontSize: 17,
     color: "#0F1419",
   },
   sheetCancel: {
-    marginTop: 4,
-    marginHorizontal: 12,
-    paddingVertical: 12,
+    marginTop: 6,
+    marginHorizontal: 14,
+    paddingVertical: 13,
     alignItems: "center",
     borderRadius: 999,
     backgroundColor: "#E7ECF0",

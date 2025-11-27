@@ -32,4 +32,6 @@
 - rtk queries created in src/store/services
 - backend implemented in login.tsx and signup.tsx as well as app/_layout.tsx
 - backend also implemented into app/(app)/home.tsx and tweets are being fetched from the db and displayed
-- CURRENT ISSUE: if a tweet has multiple media items then only the first item renders correctly, the second or more items do not render and fail to be fetched from supabase and I end up with placeholder
+- CURRENT ISSUE: if a tweet has multiple media items and the second item is a video, then I get the placeholder of the video instead of first frame simply. When I click the video, the video player DOES open and it plays and its awesome. The only issue is that I want ALL videos in tweets to just have no custom posters or placeholders, I just want the first frame of the video to render simply (which I think renders automatically may be)
+- Immediate work other then the above issue: we gotta make the like, retweet, share, and replies work, the user can view tweets in the home page, but nothing gets added to the db when he likes or retweets or shares or anything. We need to make the tweetCards fully functional.
+- cleanup: there is a weird maybeGenerateThumb in TweetCard.tsx which I cannot understand does what, if it is useless then we should clean up the file

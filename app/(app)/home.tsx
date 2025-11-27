@@ -3,14 +3,20 @@ import Fab from "@/src/components/primitives/Fab";
 import { useAppSelector } from "@/src/hooks/useRedux";
 import { supabase } from "@/src/lib/supabase";
 import {
+  useBookmarkMutation,
   useGetHomeTimelineQuery,
   useGetRepliesCountQuery,
   useGetUserBookmarksForTweetsQuery,
   useGetUserLikesForTweetsQuery,
   useGetUserRetweetsForTweetsQuery,
+  useLikeTweetMutation,
+  useRetweetMutation,
+  useUnbookmarkMutation,
+  useUnlikeTweetMutation,
+  useUnretweetMutation,
 } from "@/src/store/services/tweetsApi";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -33,6 +39,12 @@ const publicUrlFor = (path?: string | null) => {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [likeTweet] = useLikeTweetMutation();
+  const [unlikeTweet] = useUnlikeTweetMutation();
+  const [retweet] = useRetweetMutation();
+  const [unretweet] = useUnretweetMutation();
+  const [bookmark] = useBookmarkMutation();
+  const [unbookmark] = useUnbookmarkMutation();
 
   // 1) who is logged in?
   const authUser = useAppSelector((state) => state.auth.session);
@@ -61,15 +73,15 @@ export default function HomeScreen() {
   const { data: repliesData = [] } = useGetRepliesCountQuery(tweetIds, {
     skip: tweetIds.length === 0,
   });
-  const { data: likedData = [] } = useGetUserLikesForTweetsQuery(
+  const { data: likedData = [], refetch: refetchLikes } = useGetUserLikesForTweetsQuery(
     { tweetIds, userId: viewerId },
     { skip: !viewerId || tweetIds.length === 0 }
   );
-  const { data: retweetedData = [] } = useGetUserRetweetsForTweetsQuery(
+  const { data: retweetedData = [], refetch: refetchRetweets } = useGetUserRetweetsForTweetsQuery(
     { tweetIds, userId: viewerId },
     { skip: !viewerId || tweetIds.length === 0 }
   );
-  const { data: bookmarkedData = [] } = useGetUserBookmarksForTweetsQuery(
+  const { data: bookmarkedData = [], refetch: refetchBookmarks } = useGetUserBookmarksForTweetsQuery(
     { tweetIds, userId: viewerId },
     { skip: !viewerId || tweetIds.length === 0 }
   );
@@ -92,6 +104,63 @@ export default function HomeScreen() {
   const bookmarkedSet = useMemo(
     () => new Set<string>(bookmarkedData.map((row: any) => row.tweet_id)),
     [bookmarkedData]
+  );
+
+  const handleLikeToggle = useCallback(
+    async (tweetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await likeTweet({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] liked", tweetId);
+        } else {
+          await unlikeTweet({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] unliked", tweetId);
+        }
+        refetchLikes?.();
+      } catch (err) {
+        console.warn("Failed to toggle like", err);
+      }
+    },
+    [likeTweet, unlikeTweet, viewerId, refetchLikes]
+  );
+
+  const handleRetweetToggle = useCallback(
+    async (tweetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await retweet({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] retweeted", tweetId);
+        } else {
+          await unretweet({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] unretweeted", tweetId);
+        }
+        refetchRetweets?.();
+      } catch (err) {
+        console.warn("Failed to toggle retweet", err);
+      }
+    },
+    [retweet, unretweet, viewerId, refetchRetweets]
+  );
+
+  const handleBookmarkToggle = useCallback(
+    async (tweetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await bookmark({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] bookmarked", tweetId);
+        } else {
+          await unbookmark({ tweetId, userId: viewerId }).unwrap();
+          console.log("[tweets] unbookmarked", tweetId);
+        }
+        refetchBookmarks?.();
+      } catch (err) {
+        console.warn("Failed to toggle bookmark", err);
+      }
+    },
+    [bookmark, unbookmark, viewerId, refetchBookmarks]
   );
 
   // 3) pull-to-refresh handler
@@ -138,8 +207,19 @@ export default function HomeScreen() {
         media={media} // Passing actual media data here
         counts={counts}
         initialLiked={liked}
+        initialRetweeted={retweeted}
+        initialBookmarked={bookmarked}
         isOwnTweet={item.author_id === viewerId}
         showThread={false}
+        onLikeToggle={(next) => handleLikeToggle(item.id, next)}
+        onRetweetToggle={(next) => handleRetweetToggle(item.id, next)}
+        onBookmarkToggle={(next) => handleBookmarkToggle(item.id, next)}
+        onQuoteRetweet={() =>
+          router.push({
+            pathname: "/(New)/NewTweet",
+            params: { quoteId: item.id },
+          })
+        }
         onPressThread={() =>
           router.push({
             pathname: "/(app)/tweet-detail",
@@ -184,7 +264,7 @@ export default function HomeScreen() {
           />
         }
         ListEmptyComponent={renderEmpty}
-        contentContainerStyle={{ paddingBottom: 0 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
       />
       <Fab onPress={() => router.push("/(New)/NewTweet")} />
     </View>
