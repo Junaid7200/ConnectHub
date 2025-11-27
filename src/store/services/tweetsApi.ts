@@ -3,8 +3,12 @@ import {
     createTweet,
     getHomeTimeline,
     getReplies,
+    getRepliesCount,
     getTweetDetail,
     getTweetsByAuthor,
+    getUserBookmarksForTweets,
+    getUserLikesForTweets,
+    getUserRetweetsForTweets,
     like,
     retweet,
     unbookmark,
@@ -88,11 +92,25 @@ export const tweetsApi = createApi({
             query: ({ tweetId, userId }) => unbookmark(tweetId, userId),
             invalidatesTags: (_r, _e, { tweetId }) => [{ type: 'Tweet', id: tweetId }],
         }),
+        getRepliesCount: builder.query<any[], string[]>({
+            query: (tweetIds) => getRepliesCount(tweetIds),
+        }),
+        getUserLikesForTweets: builder.query<any[], { tweetIds: string[]; userId: string }>({
+            query: ({ tweetIds, userId }) => getUserLikesForTweets(tweetIds, userId),
+        }),
+        getUserRetweetsForTweets: builder.query<any[], { tweetIds: string[]; userId: string }>({
+            query: ({ tweetIds, userId }) => getUserRetweetsForTweets(tweetIds, userId),
+        }),
+        getUserBookmarksForTweets: builder.query<any[], { tweetIds: string[]; userId: string }>({
+            query: ({ tweetIds, userId }) => getUserBookmarksForTweets(tweetIds, userId),
+        }),
+
     }),
 });
 
 export const {
     useGetHomeTimelineQuery,
+    useLazyGetHomeTimelineQuery,
     useGetTweetsByAuthorQuery,
     useGetTweetDetailQuery,
     useGetRepliesQuery,
@@ -103,4 +121,8 @@ export const {
     useUnretweetMutation,
     useBookmarkMutation,
     useUnbookmarkMutation,
+    useGetRepliesCountQuery,
+    useGetUserLikesForTweetsQuery,
+    useGetUserRetweetsForTweetsQuery,
+    useGetUserBookmarksForTweetsQuery,
 } = tweetsApi;

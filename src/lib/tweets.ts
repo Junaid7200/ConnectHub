@@ -24,11 +24,53 @@ export const getHomeTimeline = async (viewerId: string, limit = 20, offset = 0) 
 
     return supabase
         .from('tweets')
-        .select('*, tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)')
+        .select(
+            'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
+        )
         .in('author_id', authorIds)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 };
+
+// Count replies for a set of tweet IDs (grouped)
+export const getRepliesCount = (tweetIds: string[]) => {
+    return supabase
+        .from('tweets')
+        .select('parent_tweet_id, count:id', { count: 'exact', head: false })
+        .in('parent_tweet_id', tweetIds);
+};
+
+// Get tweets liked by this user (returns tweet_ids the user liked)
+export const getUserLikesForTweets = (tweetIds: string[], userId: string) => {
+    return supabase
+        .from('tweet_likes')
+        .select('tweet_id')
+        .eq('user_id', userId)
+        .in('tweet_id', tweetIds);
+};
+
+// Get tweets retweeted by this user
+export const getUserRetweetsForTweets = (tweetIds: string[], userId: string) => {
+    return supabase
+        .from('tweet_retweets')
+        .select('tweet_id')
+        .eq('user_id', userId)
+        .in('tweet_id', tweetIds);
+};
+
+// Get tweets bookmarked by this user
+export const getUserBookmarksForTweets = (tweetIds: string[], userId: string) => {
+    return supabase
+        .from('tweet_bookmarks')
+        .select('tweet_id')
+        .eq('user_id', userId)
+        .in('tweet_id', tweetIds);
+};
+
+
+
+
+
 
 
 

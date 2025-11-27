@@ -1,53 +1,97 @@
 import TweetCard from '@/src/components/features/Cards/TweetCard';
 import Fab from '@/src/components/primitives/Fab';
-import { supabase } from '@/src/lib/supabase';
+import { useAppSelector } from '@/src/hooks/useRedux';
+import { useGetHomeTimelineQuery } from '@/src/store/services/tweetsApi';
 import { useRouter } from 'expo-router';
-import { FlatList, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
 
-export default function Index() {
+const PAGE_SIZE = 20;
+
+export default function HomeScreen() {
   const router = useRouter();
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+
+  // 1) who is logged in?
+  const authUser = useAppSelector((state) => state.auth.session);
+  const viewerId = authUser?.id ?? '';
+
+  // 2) fetch home timeline for that user
+  const { data: timeline = [], isLoading, isFetching, refetch, error } = useGetHomeTimelineQuery( { viewerId, limit: PAGE_SIZE, offset: 0 },
+    { skip: !viewerId }
+  );
+  console.log(`the errors: ${JSON.stringify(error)}`);
+  console.log(`the timeline: ${JSON.stringify(timeline)}`);
+
+  // 3) pull-to-refresh handler
+  const onRefresh = () => refetch();
+
+  // 4) one row → TweetCard
+  const renderItem = ({ item }: { item: any }) => {
+    const profile = item.profiles;
+
+    const counts = {
+      replies: 0,
+      retweets: item.tweet_retweets?.[0]?.count ?? 0,
+      likes: item.tweet_likes?.[0]?.count ?? 0,
+      shares: item.tweet_bookmarks?.[0]?.count ?? 0,
+    };
+
+    return (
+      <TweetCard
+        id={item.id}
+        displayName={profile?.display_name ?? 'Unknown'}
+        username={profile?.username ?? 'unknown'}
+        avatarUrl={profile?.avatar_url ?? undefined}
+        time={new Date(item.created_at).toLocaleDateString()}
+        text={item.body}
+        counts={counts}
+        isOwnTweet={item.author_id === viewerId}
+        showThread={false}
+        onPressThread={() =>
+          router.push({
+            pathname: '/(app)/tweet-detail',
+            params: { id: item.id },
+          })
+        }
+      />
+    );
   };
 
-  const tweets = Array.from({ length: 4 }).map((_, idx) => ({
-    id: `tweet-${idx}`,
-    displayName: 'Martha Craig',
-    username: 'craig_love',
-    time: '12h',
-    verified: true,
-    avatar: require('@/assets/images/project_images/p1.png'),
-    text: 'UXR/UX: You can only bring one item to a remote island to assist your research of native use of tools and usability. What do you bring? #TellMeAboutYou',
-    likedBy: ['Kieron Dotson', 'Zack John'],
-    counts: { replies: 28, retweets: 5, likes: 21, shares: 2 },
-    showThread: true,
-    isOwnTweet: idx === 0,
-  }));
+  // 5) empty / loading / error state
+  const renderEmpty = () => {
+    if (isLoading) {
+      return (
+        <View style={{ padding: 24, alignItems: 'center' }}>
+          <ActivityIndicator />
+        </View>
+      );
+    }
+    return (
+      <View style={{ padding: 24, alignItems: 'center' }}>
+        <Text style={{ color: '#657786' }}>
+          {error ? 'Failed to load timeline. Pull to retry.' : 'No tweets yet.'}
+        </Text>
+      </View>
+    );
+  };
 
+  // 6) main render
   return (
-    <View style={{ flex: 1 }}>
-      {/* flatList gives a built-in scroller, it is basically the .map thing we do in react. 
-      it also has a keyExtracter thing for the whole "assign id to each div" in react. 
-      renderItem is a prop in it that accepts a callback and tells what to render against each item*/}
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <FlatList
         style={{ flex: 1 }}
-        data={tweets}
+        data={timeline}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TweetCard
-            displayName={item.displayName}
-            username={item.username}
-            time={item.time}
-            verified={item.verified}
-            avatar={item.avatar}
-            text={item.text}
-            likedBy={item.likedBy}
-            counts={item.counts}
-            showThread={item.showThread}
-            isOwnTweet={item.isOwnTweet}
+        renderItem={renderItem}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={onRefresh}
+            tintColor="#4C9EEB"
           />
-        )}
-        contentContainerStyle={{ paddingBottom: 0 }}
+        }
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={{ paddingBottom: 120 }}
       />
       <Fab onPress={() => router.push('/(New)/NewTweet')} />
     </View>

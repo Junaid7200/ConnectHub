@@ -18,17 +18,18 @@ export default function SignUpScreen() {
   async function onSignUp() {
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedDisplayName = displayName.trim();
+    const trimmedEmail = email.trim();
     if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
       Alert.alert("Invalid Username", "Username must be between 3 and 30 characters.");
       return;
     }
     try {
-      const data = await signUpMutation({ email, password }).unwrap();
+      const data = await signUpMutation({ email: trimmedEmail, password }).unwrap();
       const userId = data?.user?.id;
       if (!userId) {
         throw new Error('User ID not found after sign up');
       }
-      await createProfile({ id: userId, username: trimmedUsername, display_name: trimmedDisplayName }).unwrap();
+      await createProfile({ id: userId, username: trimmedUsername, display_name: trimmedDisplayName || null }).unwrap();
 
       Alert.alert("Success", "Account created successfully!");
       router.replace('/(auth)/login'); // Navigate to home screen
