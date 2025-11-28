@@ -57,6 +57,8 @@ export type TweetCardProps = {
   counts: Engagement;
   showThread?: boolean;
   onPressThread?: () => void;
+  threadLabel?: string;
+  threadExpanded?: boolean;
   containerStyle?: ViewStyle;
   media?: MediaItem[];
   isOwnTweet?: boolean;

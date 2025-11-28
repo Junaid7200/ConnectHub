@@ -6,21 +6,36 @@ import MediaToolBar from '@/src/components/features/New/MediaToolBar';
 import NewTweetHeader from '@/src/components/features/New/NewTweetHeader';
 import Avatar from '@/src/components/primitives/Header/avatar';
 import { useAppSelector } from '@/src/hooks/useRedux';
+import { supabase } from '@/src/lib/supabase';
+import { useGetProfileByIdQuery } from '@/src/store/services/profilesApi';
 import { useCreateTweetMutation } from '@/src/store/services/tweetsApi';
 
 export default function NewTweet() {
   const router = useRouter();
   const session = useAppSelector((state) => state.auth.session);
   const [text, setText] = useState('');
-  const [createTweet, { isLoading } ] = useCreateTweetMutation();
+  const [createTweet, { isLoading }] = useCreateTweetMutation();
 
-  const avatarSource = useMemo(() => {
-    const metadataAvatar = (session as any)?.user_metadata?.avatar_url as string | undefined;
-    if (metadataAvatar) {
-      return { uri: metadataAvatar };
-    }
-    return require('@/assets/images/project_images/p1.png');
-  }, [session]);
+  const { data: profile } = useGetProfileByIdQuery(session?.id ?? '', {
+    skip: !session?.id,
+  });
+
+  const avatarPath = profile?.avatar_url || (session as any)?.user_metadata?.avatar_url;
+  const avatarUrl = useMemo(() => {
+    if (!avatarPath) return undefined;
+    if (avatarPath.startsWith('http')) return avatarPath;
+    const { data } = supabase.storage.from('media').getPublicUrl(avatarPath);
+    return data?.publicUrl ?? avatarPath;
+  }, [avatarPath]);
+
+  const displayName =
+    profile?.display_name ||
+    profile?.username ||
+    (session as any)?.user_metadata?.display_name ||
+    (session as any)?.user_metadata?.username ||
+    (session as any)?.user_metadata?.full_name ||
+    (session as any)?.user_metadata?.name ||
+    undefined;
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -56,7 +71,7 @@ export default function NewTweet() {
       />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.row}>
-          <Avatar source={avatarSource} name="You" size={37} style={styles.avatar} />
+          <Avatar imageUrl={avatarUrl} name={displayName} size={37} style={styles.avatar} />
           <TextInput
             placeholder="What's happening?"
             placeholderTextColor="#657786"
