@@ -35,29 +35,7 @@ const formatCount = (value: number) => {
 const linkPattern = /((?:https?:\/\/|www\.)\S+|#[\w]+|@\w+)/g;
 const twitterBlue = "#4C9EEB";
 
-export default function TweetCard({
-  id,
-  displayName,
-  username,
-  time,
-  text,
-  avatarUrl,
-  avatar,
-  verified = false,
-  likedBy,
-  retweetedBy,
-  counts,
-  showThread = false,
-  onPressThread,
-  containerStyle,
-  media,
-  isOwnTweet,
-  onPressComment,
-  hideEngagement,
-  onSharePress,
-  onLikeToggle,
-  showActivityIcon,
-  initialLiked,
+export default function TweetCard({id,displayName,username,time,text,avatarUrl,avatar,verified = false,likedBy,retweetedBy,counts,showThread = false,onPressThread,containerStyle,media,isOwnTweet,onPressComment,hideEngagement,onSharePress,onLikeToggle,showActivityIcon,initialLiked,
   initialRetweeted,
   initialBookmarked,
   onRetweetToggle,
@@ -314,20 +292,19 @@ export default function TweetCard({
           <View style={styles.content}>
             <View style={styles.titleRow}>
               <View style={styles.identityWrapper}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.displayName} numberOfLines={1} ellipsizeMode="tail">
-                    {displayName}
-                  </Text>
-                  {verified && (
-                    <SvgUri
-                      uri={verifiedUri}
-                      width={14}
-                      height={14}
-                      style={styles.verifiedIcon}
-                    />
-                  )}
-                </View>
+                <Text style={styles.displayName} numberOfLines={1} ellipsizeMode="tail">
+                  {displayName}
+                </Text>
+                {verified && (
+                  <SvgUri
+                    uri={verifiedUri}
+                    width={14}
+                    height={14}
+                    style={styles.verifiedIcon}
+                  />
+                )}
                 <Text style={styles.username} numberOfLines={1} ellipsizeMode="tail">
+                  {" "}
                   @{username} · {time}
                 </Text>
               </View>
@@ -590,15 +567,8 @@ const styles = StyleSheet.create({
   identityWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    columnGap: 6,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
     columnGap: 4,
-    maxWidth: "60%",
+    flexShrink: 1,
     minWidth: 0,
   },
   titleSpacer: {

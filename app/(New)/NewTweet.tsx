@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import MediaToolBar from '@/src/components/features/New/MediaToolBar';
@@ -16,20 +16,8 @@ export default function NewTweet() {
   const [text, setText] = useState('');
   const [createTweet, { isLoading }] = useCreateTweetMutation();
 
-  const { data: profile } = useGetProfileByIdQuery(session?.id ?? '', {
-    skip: !session?.id,
-  });
-
-  const avatarPath = profile?.avatar_url || (session as any)?.user_metadata?.avatar_url;
-  const avatarUrl = useMemo(() => {
-    if (!avatarPath) return undefined;
-    if (avatarPath.startsWith('http')) return avatarPath;
-    const { data } = supabase.storage.from('media').getPublicUrl(avatarPath);
-    return data?.publicUrl ?? avatarPath;
-  }, [avatarPath]);
-
+  const avatarUrl = (session as any)?.user_metadata?.avatar_url as string | undefined;
   const displayName =
-    profile?.display_name ||
     (session as any)?.user_metadata?.display_name ||
     (session as any)?.user_metadata?.full_name ||
     (session as any)?.user_metadata?.name ||
