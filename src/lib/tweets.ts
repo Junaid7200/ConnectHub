@@ -78,7 +78,9 @@ export const getUserBookmarksForTweets = (tweetIds: string[], userId: string) =>
 export const getTweetsByAuthor = (authorId: string, limit = 20, offset = 0) => {
     return supabase
         .from('tweets')
-        .select('*, tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)')
+        .select(
+            'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
+        )
         .eq('author_id', authorId)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -87,7 +89,9 @@ export const getTweetsByAuthor = (authorId: string, limit = 20, offset = 0) => {
 export const getTweetDetail = (tweetId: string) => {
     return supabase
         .from('tweets')
-        .select('*, tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)')
+        .select(
+            'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
+        )
         .eq('id', tweetId)
         .single();
 };
@@ -95,7 +99,9 @@ export const getTweetDetail = (tweetId: string) => {
 export const getReplies = (parentTweetId: string) => {
     return supabase
         .from('tweets')
-        .select('*, tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)')
+        .select(
+            'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
+        )
         .eq('parent_tweet_id', parentTweetId)
         .order('created_at', { ascending: true });
 };
