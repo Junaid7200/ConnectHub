@@ -579,6 +579,7 @@ const styles = StyleSheet.create({
   },
   verifiedIcon: {
     marginRight: 4,
+    flexShrink: 0,
   },
   username: {
     fontSize: 14,

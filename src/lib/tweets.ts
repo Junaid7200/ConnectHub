@@ -37,7 +37,7 @@ export const getHomeTimeline = async (viewerId: string, limit = 20, offset = 0) 
 export const getRepliesCount = (tweetIds: string[]) => {
     return supabase
         .from('tweets')
-        .select('parent_tweet_id, count:id', { count: 'exact', head: false })
+        .select('id, parent_tweet_id')
         .in('parent_tweet_id', tweetIds);
 };
 
@@ -96,14 +96,38 @@ export const getTweetDetail = (tweetId: string) => {
         .single();
 };
 
-export const getReplies = (parentTweetId: string) => {
-    return supabase
-        .from('tweets')
-        .select(
-            'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
-        )
-        .eq('parent_tweet_id', parentTweetId)
-        .order('created_at', { ascending: true });
+export const getReplies = async (parentTweetId: string) => {
+    const seen = new Set<string>();
+    const queue: string[] = [parentTweetId];
+    const allReplies: any[] = [];
+
+    while (queue.length) {
+        const currentParent = queue.shift();
+        if (!currentParent) continue;
+
+        const { data, error } = await supabase
+            .from('tweets')
+            .select(
+                'id, author_id, body, created_at, visibility, parent_tweet_id, profiles!tweets_author_id_fkey(id, username, display_name, avatar_url, is_verified), tweet_media(*), tweet_likes(count), tweet_retweets(count), tweet_bookmarks(count)'
+            )
+            .eq('parent_tweet_id', currentParent)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            return { data: allReplies, error };
+        }
+
+        const fresh = (data ?? []).filter((row) => {
+            if (!row?.id || seen.has(row.id)) return false;
+            seen.add(row.id);
+            return true;
+        });
+
+        allReplies.push(...fresh);
+        queue.push(...fresh.map((row) => row.id));
+    }
+
+    return { data: allReplies, error: null };
 };
 
 export const createTweet = (payload: {
