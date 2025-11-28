@@ -1,4 +1,5 @@
 import TweetCard from "@/src/components/features/Cards/TweetCard";
+import { formatRelativeTime } from "@/src/lib/time";
 import Fab from "@/src/components/primitives/Fab";
 import { useAppSelector } from "@/src/hooks/useRedux";
 import { supabase } from "@/src/lib/supabase";
@@ -86,13 +87,15 @@ export default function HomeScreen() {
     { skip: !viewerId || tweetIds.length === 0 }
   );
 
-  const repliesMap = useMemo(
-    () =>
-      new Map<string, number>(
-        repliesData.map((row: any) => [row.parent_tweet_id, row.count])
-      ),
-    [repliesData]
-  );
+  const repliesMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    repliesData.forEach((row: any) => {
+      const parent = row?.parent_tweet_id;
+      if (!parent) return;
+      counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    });
+    return counts;
+  }, [repliesData]);
   const likedSet = useMemo(
     () => new Set<string>(likedData.map((row: any) => row.tweet_id)),
     [likedData]
@@ -201,8 +204,9 @@ export default function HomeScreen() {
         id={item.id}
         displayName={profile?.display_name ?? "Unknown"}
         username={profile?.username ?? "unknown"}
+        verified={profile?.is_verified ?? false}
         avatarUrl={avatarUrl}
-        time={new Date(item.created_at).toLocaleDateString()}
+        time={formatRelativeTime(item.created_at)}
         text={item.body}
         media={media} // Passing actual media data here
         counts={counts}
@@ -211,6 +215,9 @@ export default function HomeScreen() {
         initialBookmarked={bookmarked}
         isOwnTweet={item.author_id === viewerId}
         showThread={false}
+        onPressComment={() =>
+          router.push({ pathname: "/(app)/tweet-detail", params: { id: item.id } })
+        }
         onLikeToggle={(next) => handleLikeToggle(item.id, next)}
         onRetweetToggle={(next) => handleRetweetToggle(item.id, next)}
         onBookmarkToggle={(next) => handleBookmarkToggle(item.id, next)}

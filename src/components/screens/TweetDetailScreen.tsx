@@ -1,6 +1,7 @@
 import TweetCard from '@/src/components/features/Cards/TweetCard';
 import { useAppSelector } from '@/src/hooks/useRedux';
 import { supabase } from '@/src/lib/supabase';
+import { formatRelativeTime } from '@/src/lib/time';
 import {
   useBookmarkMutation,
   useGetRepliesQuery,
@@ -177,7 +178,7 @@ export default function TweetDetailScreen() {
         username: profile?.username ?? 'unknown',
         avatarUrl,
         verified: profile?.is_verified ?? false,
-        time: new Date(item.created_at).toLocaleString(),
+        time: formatRelativeTime(item.created_at),
         text: item.body,
         media,
         counts: {
@@ -195,6 +196,40 @@ export default function TweetDetailScreen() {
     [bookmarkedSet, likedSet, repliesCountMap, retweetedSet, viewerId]
   );
 
+  const threadItems = useMemo(() => {
+    if (!tweet?.id) return [] as Array<{ item: any; depth: number; hasChildren: boolean }>;
+
+    const children = new Map<string, any[]>();
+    replies?.forEach((reply: any) => {
+      const parent = reply?.parent_tweet_id;
+      if (!parent) return;
+      const list = children.get(parent) ?? [];
+      list.push(reply);
+      children.set(parent, list);
+    });
+
+    children.forEach((list) =>
+      list.sort(
+        (a, b) => new Date(a?.created_at).getTime() - new Date(b?.created_at).getTime()
+      )
+    );
+
+    const ordered: Array<{ item: any; depth: number; hasChildren: boolean }> = [];
+    const walk = (parentId: string, depth: number) => {
+      const kids = children.get(parentId) ?? [];
+      kids.forEach((child: any) => {
+        const hasChildren = (children.get(child?.id)?.length ?? 0) > 0;
+        ordered.push({ item: child, depth, hasChildren });
+        if (child?.id) {
+          walk(child.id, depth + 1);
+        }
+      });
+    };
+
+    walk(tweet.id, 0);
+    return ordered;
+  }, [replies, tweet?.id]);
+
   const renderTweet = useCallback(
     (item: any) => {
       const mapped = mapTweet(item);
@@ -206,6 +241,34 @@ export default function TweetDetailScreen() {
           onRetweetToggle={(next) => handleRetweetToggle(mapped.id ?? '', next)}
           onBookmarkToggle={(next) => handleBookmarkToggle(mapped.id ?? '', next)}
         />
+      );
+    },
+    [handleBookmarkToggle, handleLikeToggle, handleRetweetToggle, mapTweet]
+  );
+
+  const renderThreadItem = useCallback(
+    ({ item }: { item: { item: any; depth: number; hasChildren: boolean } }) => {
+      const mapped = mapTweet(item.item);
+      return (
+        <View
+          style={[
+            styles.replyCard,
+            item.depth > 0 && {
+              borderLeftWidth: 2,
+              borderLeftColor: '#E1E8ED',
+              paddingLeft: 12,
+              marginLeft: item.depth * 12,
+            },
+          ]}
+        >
+          <TweetCard
+            {...mapped}
+            showThread={item.hasChildren}
+            onLikeToggle={(next) => handleLikeToggle(mapped.id ?? '', next)}
+            onRetweetToggle={(next) => handleRetweetToggle(mapped.id ?? '', next)}
+            onBookmarkToggle={(next) => handleBookmarkToggle(mapped.id ?? '', next)}
+          />
+        </View>
       );
     },
     [handleBookmarkToggle, handleLikeToggle, handleRetweetToggle, mapTweet]
@@ -237,11 +300,9 @@ export default function TweetDetailScreen() {
         </View>
       ) : (
         <FlatList
-          data={replies}
-          keyExtractor={(item) => item.id as string}
-          renderItem={({ item }) => (
-            <View style={styles.replyCard}>{renderTweet(item)}</View>
-          )}
+          data={threadItems}
+          keyExtractor={(item) => item.item.id as string}
+          renderItem={renderThreadItem}
           refreshControl={
             <RefreshControl
               refreshing={isTweetLoading || isRepliesLoading}

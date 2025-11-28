@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import MediaToolBar from '@/src/components/features/New/MediaToolBar';
@@ -12,15 +12,15 @@ export default function NewTweet() {
   const router = useRouter();
   const session = useAppSelector((state) => state.auth.session);
   const [text, setText] = useState('');
-  const [createTweet, { isLoading } ] = useCreateTweetMutation();
+  const [createTweet, { isLoading }] = useCreateTweetMutation();
 
-  const avatarSource = useMemo(() => {
-    const metadataAvatar = (session as any)?.user_metadata?.avatar_url as string | undefined;
-    if (metadataAvatar) {
-      return { uri: metadataAvatar };
-    }
-    return require('@/assets/images/project_images/p1.png');
-  }, [session]);
+  const avatarUrl = (session as any)?.user_metadata?.avatar_url as string | undefined;
+  const displayName =
+    (session as any)?.user_metadata?.display_name ||
+    (session as any)?.user_metadata?.full_name ||
+    (session as any)?.user_metadata?.name ||
+    session?.email ||
+    undefined;
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -56,7 +56,7 @@ export default function NewTweet() {
       />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.row}>
-          <Avatar source={avatarSource} name="You" size={37} style={styles.avatar} />
+          <Avatar imageUrl={avatarUrl} name={displayName} size={37} style={styles.avatar} />
           <TextInput
             placeholder="What's happening?"
             placeholderTextColor="#657786"
