@@ -1,6 +1,7 @@
 import TweetCard from '@/src/components/features/Cards/TweetCard';
 import { useAppSelector } from '@/src/hooks/useRedux';
 import { supabase } from '@/src/lib/supabase';
+import { formatRelativeTime } from '@/src/lib/time';
 import {
   useBookmarkMutation,
   useGetRepliesQuery,
@@ -177,7 +178,7 @@ export default function TweetDetailScreen() {
         username: profile?.username ?? 'unknown',
         avatarUrl,
         verified: profile?.is_verified ?? false,
-        time: new Date(item.created_at).toLocaleString(),
+        time: formatRelativeTime(item.created_at),
         text: item.body,
         media,
         counts: {

@@ -1,4 +1,5 @@
 import TweetCard from "@/src/components/features/Cards/TweetCard";
+import { formatRelativeTime } from "@/src/lib/time";
 import Fab from "@/src/components/primitives/Fab";
 import { useAppSelector } from "@/src/hooks/useRedux";
 import { supabase } from "@/src/lib/supabase";
@@ -202,7 +203,7 @@ export default function HomeScreen() {
         displayName={profile?.display_name ?? "Unknown"}
         username={profile?.username ?? "unknown"}
         avatarUrl={avatarUrl}
-        time={new Date(item.created_at).toLocaleDateString()}
+        time={formatRelativeTime(item.created_at)}
         text={item.body}
         media={media} // Passing actual media data here
         counts={counts}
@@ -211,6 +212,9 @@ export default function HomeScreen() {
         initialBookmarked={bookmarked}
         isOwnTweet={item.author_id === viewerId}
         showThread={false}
+        onPressComment={() =>
+          router.push({ pathname: "/(app)/tweet-detail", params: { id: item.id } })
+        }
         onLikeToggle={(next) => handleLikeToggle(item.id, next)}
         onRetweetToggle={(next) => handleRetweetToggle(item.id, next)}
         onBookmarkToggle={(next) => handleBookmarkToggle(item.id, next)}
