@@ -1,4 +1,5 @@
 import TweetCard from "@/src/components/features/Cards/TweetCard";
+import { formatRelativeTime } from "@/src/lib/time";
 import Fab from "@/src/components/primitives/Fab";
 import { useAppSelector } from "@/src/hooks/useRedux";
 import { supabase } from "@/src/lib/supabase";
@@ -6,6 +7,7 @@ import {
   useBookmarkMutation,
   useGetHomeTimelineQuery,
   useGetRepliesCountQuery,
+  useLazyGetRepliesQuery,
   useGetUserBookmarksForTweetsQuery,
   useGetUserLikesForTweetsQuery,
   useGetUserRetweetsForTweetsQuery,
@@ -16,11 +18,12 @@ import {
   useUnretweetMutation,
 } from "@/src/store/services/tweetsApi";
 import { useRouter } from "expo-router";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -34,6 +37,245 @@ const publicUrlFor = (path?: string | null) => {
   const { data } = supabase.storage.from("media").getPublicUrl(path);
   return data?.publicUrl ?? undefined;
 };
+
+
+type HomeTweetItemProps = {
+  item: any;
+  viewerId: string;
+  replyCountMap: Map<string, number>;
+  likedSet: Set<string>;
+  retweetedSet: Set<string>;
+  bookmarkedSet: Set<string>;
+  onLikeToggle: (id: string, next: boolean) => void;
+  onRetweetToggle: (id: string, next: boolean) => void;
+  onBookmarkToggle: (id: string, next: boolean) => void;
+  onOpenDetail: (id: string) => void;
+  onQuoteRetweet: (id: string) => void;
+};
+
+const HomeTweetItem = ({
+  item,
+  viewerId,
+  replyCountMap,
+  likedSet,
+  retweetedSet,
+  bookmarkedSet,
+  onLikeToggle,
+  onRetweetToggle,
+  onBookmarkToggle,
+  onOpenDetail,
+  onQuoteRetweet,
+}: HomeTweetItemProps) => {
+  const [rootExpanded, setRootExpanded] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [loadReplies, { data: replies = [], isFetching }] = useLazyGetRepliesQuery();
+
+  const childCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    (replies ?? []).forEach((reply: any) => {
+      const parent = reply?.parent_tweet_id;
+      if (!parent) return;
+      counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    });
+    return counts;
+  }, [replies]);
+
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (replies ?? []).forEach((reply: any) => {
+      const parent = reply?.parent_tweet_id;
+      if (!parent) return;
+      const list = map.get(parent) ?? [];
+      list.push(reply);
+      map.set(parent, list);
+    });
+
+    map.forEach((list) =>
+      list.sort(
+        (a, b) =>
+          new Date(a?.created_at ?? 0).getTime() -
+          new Date(b?.created_at ?? 0).getTime()
+      )
+    );
+
+    return map;
+  }, [replies]);
+
+  const mapTweet = useCallback(
+    (raw: any, replyLookup: Map<string, number>, isRoot: boolean) => {
+      const profile = raw?.profiles;
+      const avatarUrl = publicUrlFor(profile?.avatar_url);
+      const media = (raw?.tweet_media ?? [])
+        .map((m: any) => {
+          const uri = publicUrlFor(m.storage_path);
+          if (!uri) return null;
+          const poster = m.thumbnail_url ? publicUrlFor(m.thumbnail_url) : undefined;
+          return {
+            type: m.media_type === "video" ? "video" : "image",
+            source: { uri },
+            poster: poster ? { uri: poster } : undefined,
+          };
+        })
+        .filter(Boolean);
+
+      return {
+        id: raw.id,
+        displayName: profile?.display_name ?? "Unknown",
+        username: profile?.username ?? "unknown",
+        verified: profile?.is_verified ?? false,
+        avatarUrl,
+        time: formatRelativeTime(raw.created_at),
+        text: raw.body,
+        media,
+        counts: {
+          replies: replyLookup.get(raw.id) ?? 0,
+          retweets: raw.tweet_retweets?.[0]?.count ?? 0,
+          likes: raw.tweet_likes?.[0]?.count ?? 0,
+          shares: raw.tweet_bookmarks?.[0]?.count ?? 0,
+        },
+        isOwnTweet: raw.author_id === viewerId,
+        initialLiked: isRoot ? likedSet.has(raw.id) : false,
+        initialRetweeted: isRoot ? retweetedSet.has(raw.id) : false,
+        initialBookmarked: isRoot ? bookmarkedSet.has(raw.id) : false,
+      } as const;
+    },
+    [bookmarkedSet, likedSet, retweetedSet, viewerId]
+  );
+
+  const toggleNode = useCallback((id: string) => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const renderChildren = useCallback(
+    (parentId: string, depth: number): React.ReactNode => {
+      const nodes = childrenMap.get(parentId) ?? [];
+      return nodes.map((child: any) => {
+        const hasChildren = (childrenMap.get(child.id)?.length ?? 0) > 0;
+        const isOpen = expandedNodes.has(child.id);
+        const mapped = mapTweet(child, childCounts, false);
+
+        return (
+          <View
+            key={child.id}
+            style={[
+              styles.replyContainer,
+              {
+                marginLeft: 58 + (depth - 1) * 12,
+                borderLeftWidth: 2,
+                borderLeftColor: "#E1E8ED",
+                paddingLeft: 12,
+              },
+            ]}
+          >
+            <TweetCard
+              {...mapped}
+              showThread={hasChildren}
+              threadExpanded={isOpen}
+              threadLabel={
+                hasChildren
+                  ? isOpen
+                    ? "Hide this thread"
+                    : "Show this thread"
+                  : undefined
+              }
+              onPressThread={hasChildren ? () => toggleNode(child.id) : undefined}
+              onPressComment={() => onOpenDetail(mapped.id ?? "")}
+              onLikeToggle={(next) => onLikeToggle(mapped.id ?? "", next)}
+              onRetweetToggle={(next) => onRetweetToggle(mapped.id ?? "", next)}
+              onBookmarkToggle={(next) => onBookmarkToggle(mapped.id ?? "", next)}
+              onQuoteRetweet={() => onQuoteRetweet(mapped.id ?? "")}
+            />
+
+            {hasChildren && isOpen ? renderChildren(child.id, depth + 1) : null}
+          </View>
+        );
+      });
+    },
+    [
+      childCounts,
+      childrenMap,
+      expandedNodes,
+      mapTweet,
+      onBookmarkToggle,
+      onLikeToggle,
+      onOpenDetail,
+      onQuoteRetweet,
+      onRetweetToggle,
+      toggleNode,
+    ]
+  );
+
+  const rootProps = mapTweet(item, replyCountMap, true);
+
+  const handleRootThread = () => {
+    if (!rootExpanded) {
+      loadReplies(item.id);
+    }
+    setRootExpanded((prev) => !prev);
+    if (rootExpanded) {
+      setExpandedNodes(new Set());
+    }
+  };
+
+  return (
+    <View>
+      <TweetCard
+        {...rootProps}
+        showThread={rootProps.counts.replies > 0}
+        threadExpanded={rootExpanded}
+        threadLabel={rootProps.counts.replies > 0 ? (rootExpanded ? "Hide this thread" : "Show this thread") : undefined}
+        onPressComment={() => onOpenDetail(item.id)}
+        onPressThread={rootProps.counts.replies > 0 ? handleRootThread : undefined}
+        onLikeToggle={(next) => onLikeToggle(item.id, next)}
+        onRetweetToggle={(next) => onRetweetToggle(item.id, next)}
+        onBookmarkToggle={(next) => onBookmarkToggle(item.id, next)}
+        onQuoteRetweet={() => onQuoteRetweet(item.id)}
+      />
+
+      {rootExpanded && (
+        <View style={styles.threadContainer}>
+          {isFetching && (replies?.length ?? 0) === 0 ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#657786" />
+              <Text style={styles.loadingText}>Loading thread…</Text>
+            </View>
+          ) : (
+            renderChildren(item.id, 1)
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+
+const styles = StyleSheet.create({
+  threadContainer: {
+    paddingBottom: 4,
+  },
+  replyContainer: {
+    marginTop: 4,
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 58,
+    paddingVertical: 8,
+    columnGap: 8,
+  },
+  loadingText: {
+    color: "#657786",
+    fontSize: 14,
+  },
+});
 
 
 
@@ -86,13 +328,15 @@ export default function HomeScreen() {
     { skip: !viewerId || tweetIds.length === 0 }
   );
 
-  const repliesMap = useMemo(
-    () =>
-      new Map<string, number>(
-        repliesData.map((row: any) => [row.parent_tweet_id, row.count])
-      ),
-    [repliesData]
-  );
+  const repliesMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    repliesData.forEach((row: any) => {
+      const parent = row?.parent_tweet_id;
+      if (!parent) return;
+      counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    });
+    return counts;
+  }, [repliesData]);
   const likedSet = useMemo(
     () => new Set<string>(likedData.map((row: any) => row.tweet_id)),
     [likedData]
@@ -167,68 +411,25 @@ export default function HomeScreen() {
   const onRefresh = () => refetch();
 
   // 4) one row → TweetCard
-  const renderItem = ({ item }: { item: any }) => {
-    const profile = item.profiles;
-
-    // Resolve avatar and media public URLs
-    const avatarUrl = publicUrlFor(profile?.avatar_url);
-    const media = (item.tweet_media ?? [])
-      .map((m: any) => {
-        const uri = publicUrlFor(m.storage_path);
-        if (!uri) return null;
-        const poster = m.thumbnail_url ? publicUrlFor(m.thumbnail_url) : undefined;
-        return {
-          type: m.media_type === "video" ? "video" : "image",
-          source: { uri },
-          poster: poster ? { uri: poster } : undefined,
-        };
-      })
-      .filter(Boolean);
-
-    const counts = {
-      replies: repliesMap.get(item.id) ?? 0, // replies count
-      retweets: item.tweet_retweets?.[0]?.count ?? 0,
-      likes: item.tweet_likes?.[0]?.count ?? 0,
-      shares: item.tweet_bookmarks?.[0]?.count ?? 0,
-    };
-
-    const liked = likedSet.has(item.id);
-    const retweeted = retweetedSet.has(item.id);
-    const bookmarked = bookmarkedSet.has(item.id);
-
-    return (
-      <TweetCard
-        id={item.id}
-        displayName={profile?.display_name ?? "Unknown"}
-        username={profile?.username ?? "unknown"}
-        avatarUrl={avatarUrl}
-        time={new Date(item.created_at).toLocaleDateString()}
-        text={item.body}
-        media={media} // Passing actual media data here
-        counts={counts}
-        initialLiked={liked}
-        initialRetweeted={retweeted}
-        initialBookmarked={bookmarked}
-        isOwnTweet={item.author_id === viewerId}
-        showThread={false}
-        onLikeToggle={(next) => handleLikeToggle(item.id, next)}
-        onRetweetToggle={(next) => handleRetweetToggle(item.id, next)}
-        onBookmarkToggle={(next) => handleBookmarkToggle(item.id, next)}
-        onQuoteRetweet={() =>
-          router.push({
-            pathname: "/(New)/NewTweet",
-            params: { quoteId: item.id },
-          })
-        }
-        onPressThread={() =>
-          router.push({
-            pathname: "/(app)/tweet-detail",
-            params: { id: item.id },
-          })
-        }
-      />
-    );
-  };
+  const renderItem = ({ item }: { item: any }) => (
+    <HomeTweetItem
+      item={item}
+      viewerId={viewerId}
+      replyCountMap={repliesMap}
+      likedSet={likedSet}
+      retweetedSet={retweetedSet}
+      bookmarkedSet={bookmarkedSet}
+      onLikeToggle={handleLikeToggle}
+      onRetweetToggle={handleRetweetToggle}
+      onBookmarkToggle={handleBookmarkToggle}
+      onOpenDetail={(id) =>
+        router.push({ pathname: "/(app)/tweet-detail", params: { id } })
+      }
+      onQuoteRetweet={(id) =>
+        router.push({ pathname: "/(New)/NewTweet", params: { quoteId: id } })
+      }
+    />
+  );
 
   // 5) empty / loading / error state
   const renderEmpty = () => {

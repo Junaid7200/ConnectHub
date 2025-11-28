@@ -114,6 +114,7 @@ export const {
     useGetTweetsByAuthorQuery,
     useGetTweetDetailQuery,
     useGetRepliesQuery,
+    useLazyGetRepliesQuery,
     useCreateTweetMutation,
     useLikeTweetMutation,
     useUnlikeTweetMutation,

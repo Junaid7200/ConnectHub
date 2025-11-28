@@ -35,12 +35,36 @@ const formatCount = (value: number) => {
 const linkPattern = /((?:https?:\/\/|www\.)\S+|#[\w]+|@\w+)/g;
 const twitterBlue = "#4C9EEB";
 
-export default function TweetCard({displayName,username,time,text,avatarUrl,avatar,verified = false,likedBy,retweetedBy,counts,showThread = false,onPressThread,containerStyle,media,isOwnTweet,onPressComment,hideEngagement,onSharePress,onLikeToggle,showActivityIcon,initialLiked,
+export default function TweetCard({
+  id,
+  displayName,
+  username,
+  time,
+  text,
+  avatarUrl,
+  avatar,
+  verified = false,
+  likedBy,
+  retweetedBy,
+  counts,
+  showThread = false,
+  onPressThread,
+  containerStyle,
+  media,
+  isOwnTweet,
+  onPressComment,
+  hideEngagement,
+  onSharePress,
+  onLikeToggle,
+  showActivityIcon,
+  initialLiked,
   initialRetweeted,
   initialBookmarked,
   onRetweetToggle,
   onBookmarkToggle,
   onQuoteRetweet,
+  threadLabel,
+  threadExpanded,
 }: TweetCardProps) {
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [retweeted, setRetweeted] = useState(initialRetweeted ?? false);
@@ -289,23 +313,28 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
 
           <View style={styles.content}>
             <View style={styles.titleRow}>
-              <Text style={styles.displayName}>{displayName}</Text>
-              {verified && (
-                <SvgUri
-                  uri={verifiedUri}
-                  width={14}
-                  height={14}
-                  style={styles.verifiedIcon}
-                />
-              )}
-              <Text style={styles.username}>
-                {" "}
-                @{username} · {time}
-              </Text>
+              <View style={styles.identityWrapper}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.displayName} numberOfLines={1} ellipsizeMode="tail">
+                    {displayName}
+                  </Text>
+                  {verified && (
+                    <SvgUri
+                      uri={verifiedUri}
+                      width={14}
+                      height={14}
+                      style={styles.verifiedIcon}
+                    />
+                  )}
+                </View>
+                <Text style={styles.username} numberOfLines={1} ellipsizeMode="tail">
+                  @{username} · {time}
+                </Text>
+              </View>
               <View style={styles.titleSpacer} />
               <ChevronDown size={16} color="#657786" />
             </View>
-
+          
             {renderTweetText(text)}
 
             {media && media.length > 0 ? (
@@ -337,11 +366,13 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
                   onPress={
                     onPressComment
                       ? onPressComment
-                      : () =>
-                          router.push({
-                            pathname: "/(app)/tweet-detail",
-                            params: { variant: isOwnTweet ? "mine" : "other" },
-                          })
+                      : id
+                        ? () =>
+                            router.push({
+                              pathname: "/(app)/tweet-detail",
+                              params: { id },
+                            })
+                        : undefined
                   }
                 />
                 <EngagementItem
@@ -400,7 +431,9 @@ export default function TweetCard({displayName,username,time,text,avatarUrl,avat
                 onPress={onPressThread}
                 style={styles.threadLinkWrapper}
               >
-                <Text style={styles.threadLink}>Show this thread</Text>
+                <Text style={styles.threadLink}>
+                  {threadLabel ?? (threadExpanded ? "Hide this thread" : "Show this thread")}
+                </Text>
               </Pressable>
             )}
           </View>
@@ -552,6 +585,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "nowrap",
     columnGap: 4,
+    minWidth: 0,
+  },
+  identityWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 6,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 4,
+    maxWidth: "60%",
+    minWidth: 0,
   },
   titleSpacer: {
     flex: 1,
@@ -560,16 +608,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     color: "#0F1419",
-    marginRight: 4,
+    flexShrink: 1,
+    minWidth: 0,
   },
   verifiedIcon: {
     marginRight: 4,
+    flexShrink: 0,
   },
   username: {
     fontSize: 14,
     color: "#657786",
     flexShrink: 1,
-    marginRight: 6,
+    minWidth: 0,
   },
   text: {
     fontSize: 15,
