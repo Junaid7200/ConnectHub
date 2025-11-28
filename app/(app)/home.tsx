@@ -70,24 +70,19 @@ const HomeTweetItem = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [loadReplies, { data: replies = [], isFetching }] = useLazyGetRepliesQuery();
 
-  const replyList = useMemo(
-    () => (Array.isArray(replies) ? replies : (replies as any)?.data ?? []),
-    [replies]
-  );
-
   const childCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    replyList.forEach((reply: any) => {
+    (replies ?? []).forEach((reply: any) => {
       const parent = reply?.parent_tweet_id;
       if (!parent) return;
       counts.set(parent, (counts.get(parent) ?? 0) + 1);
     });
     return counts;
-  }, [replyList]);
+  }, [replies]);
 
   const childrenMap = useMemo(() => {
     const map = new Map<string, any[]>();
-    replyList.forEach((reply: any) => {
+    (replies ?? []).forEach((reply: any) => {
       const parent = reply?.parent_tweet_id;
       if (!parent) return;
       const list = map.get(parent) ?? [];
@@ -104,7 +99,7 @@ const HomeTweetItem = ({
     );
 
     return map;
-  }, [replyList]);
+  }, [replies]);
 
   const mapTweet = useCallback(
     (raw: any, replyLookup: Map<string, number>, isRoot: boolean) => {
@@ -333,23 +328,15 @@ export default function HomeScreen() {
     { skip: !viewerId || tweetIds.length === 0 }
   );
 
-  const replyCountRows = useMemo(
-    () =>
-      Array.isArray(repliesData)
-        ? repliesData
-        : (repliesData as any)?.data ?? [],
-    [repliesData]
-  );
-
   const repliesMap = useMemo(() => {
     const counts = new Map<string, number>();
-    replyCountRows.forEach((row: any) => {
+    repliesData.forEach((row: any) => {
       const parent = row?.parent_tweet_id;
       if (!parent) return;
       counts.set(parent, (counts.get(parent) ?? 0) + 1);
     });
     return counts;
-  }, [replyCountRows]);
+  }, [repliesData]);
   const likedSet = useMemo(
     () => new Set<string>(likedData.map((row: any) => row.tweet_id)),
     [likedData]
@@ -424,25 +411,72 @@ export default function HomeScreen() {
   const onRefresh = () => refetch();
 
   // 4) one row → TweetCard
-  const renderItem = ({ item }: { item: any }) => (
-    <HomeTweetItem
-      item={item}
-      viewerId={viewerId}
-      replyCountMap={repliesMap}
-      likedSet={likedSet}
-      retweetedSet={retweetedSet}
-      bookmarkedSet={bookmarkedSet}
-      onLikeToggle={handleLikeToggle}
-      onRetweetToggle={handleRetweetToggle}
-      onBookmarkToggle={handleBookmarkToggle}
-      onOpenDetail={(id) =>
-        router.push({ pathname: "/(app)/tweet-detail", params: { id } })
-      }
-      onQuoteRetweet={(id) =>
-        router.push({ pathname: "/(New)/NewTweet", params: { quoteId: id } })
-      }
-    />
-  );
+  const renderItem = ({ item }: { item: any }) => {
+    const profile = item.profiles;
+
+    // Resolve avatar and media public URLs
+    const avatarUrl = publicUrlFor(profile?.avatar_url);
+    const media = (item.tweet_media ?? [])
+      .map((m: any) => {
+        const uri = publicUrlFor(m.storage_path);
+        if (!uri) return null;
+        const poster = m.thumbnail_url ? publicUrlFor(m.thumbnail_url) : undefined;
+        return {
+          type: m.media_type === "video" ? "video" : "image",
+          source: { uri },
+          poster: poster ? { uri: poster } : undefined,
+        };
+      })
+      .filter(Boolean);
+
+    const counts = {
+      replies: repliesMap.get(item.id) ?? 0, // replies count
+      retweets: item.tweet_retweets?.[0]?.count ?? 0,
+      likes: item.tweet_likes?.[0]?.count ?? 0,
+      shares: item.tweet_bookmarks?.[0]?.count ?? 0,
+    };
+
+    const liked = likedSet.has(item.id);
+    const retweeted = retweetedSet.has(item.id);
+    const bookmarked = bookmarkedSet.has(item.id);
+
+    return (
+      <TweetCard
+        id={item.id}
+        displayName={profile?.display_name ?? "Unknown"}
+        username={profile?.username ?? "unknown"}
+        verified={profile?.is_verified ?? false}
+        avatarUrl={avatarUrl}
+        time={formatRelativeTime(item.created_at)}
+        text={item.body}
+        media={media} // Passing actual media data here
+        counts={counts}
+        initialLiked={liked}
+        initialRetweeted={retweeted}
+        initialBookmarked={bookmarked}
+        isOwnTweet={item.author_id === viewerId}
+        showThread={false}
+        onPressComment={() =>
+          router.push({ pathname: "/(app)/tweet-detail", params: { id: item.id } })
+        }
+        onLikeToggle={(next) => handleLikeToggle(item.id, next)}
+        onRetweetToggle={(next) => handleRetweetToggle(item.id, next)}
+        onBookmarkToggle={(next) => handleBookmarkToggle(item.id, next)}
+        onQuoteRetweet={() =>
+          router.push({
+            pathname: "/(New)/NewTweet",
+            params: { quoteId: item.id },
+          })
+        }
+        onPressThread={() =>
+          router.push({
+            pathname: "/(app)/tweet-detail",
+            params: { id: item.id },
+          })
+        }
+      />
+    );
+  };
 
   // 5) empty / loading / error state
   const renderEmpty = () => {
