@@ -6,6 +6,8 @@ import MediaToolBar from '@/src/components/features/New/MediaToolBar';
 import NewTweetHeader from '@/src/components/features/New/NewTweetHeader';
 import Avatar from '@/src/components/primitives/Header/avatar';
 import { useAppSelector } from '@/src/hooks/useRedux';
+import { supabase } from '@/src/lib/supabase';
+import { useGetProfileByIdQuery } from '@/src/store/services/profilesApi';
 import { useCreateTweetMutation } from '@/src/store/services/tweetsApi';
 
 export default function NewTweet() {

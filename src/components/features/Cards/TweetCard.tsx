@@ -41,6 +41,8 @@ export default function TweetCard({id,displayName,username,time,text,avatarUrl,a
   onRetweetToggle,
   onBookmarkToggle,
   onQuoteRetweet,
+  threadLabel,
+  threadExpanded,
 }: TweetCardProps) {
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [retweeted, setRetweeted] = useState(initialRetweeted ?? false);
@@ -406,7 +408,9 @@ export default function TweetCard({id,displayName,username,time,text,avatarUrl,a
                 onPress={onPressThread}
                 style={styles.threadLinkWrapper}
               >
-                <Text style={styles.threadLink}>Show this thread</Text>
+                <Text style={styles.threadLink}>
+                  {threadLabel ?? (threadExpanded ? "Hide this thread" : "Show this thread")}
+                </Text>
               </Pressable>
             )}
           </View>
