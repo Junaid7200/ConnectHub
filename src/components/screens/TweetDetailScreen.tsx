@@ -1,173 +1,275 @@
 import TweetCard from '@/src/components/features/Cards/TweetCard';
-import Avatar from '@/src/components/primitives/Header/avatar';
-import { TweetCardProps } from '@/src/types/types';
-import { Asset } from 'expo-asset';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BarChart3, ChevronLeft, Heart, MessageCircle, Repeat2, Upload } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import { SvgUri } from 'react-native-svg';
+import { useAppSelector } from '@/src/hooks/useRedux';
+import { supabase } from '@/src/lib/supabase';
+import {
+  useBookmarkMutation,
+  useGetRepliesQuery,
+  useGetTweetDetailQuery,
+  useGetUserBookmarksForTweetsQuery,
+  useGetUserLikesForTweetsQuery,
+  useGetUserRetweetsForTweetsQuery,
+  useLikeTweetMutation,
+  useRetweetMutation,
+  useUnbookmarkMutation,
+  useUnlikeTweetMutation,
+  useUnretweetMutation,
+} from '@/src/store/services/tweetsApi';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-type Variant = 'mine' | 'other';
-
-const mineTweet: TweetCardProps = {
-  id: 'mine',
-  displayName: 'Pixsellz',
-  username: 'pixsellz',
-  time: '17:18 · 2/14/20',
-  text: 'Must have icon collections',
-  counts: { replies: 3, retweets: 2, likes: 24, shares: 1 },
-  media: [require('@/assets/images/project_images/MediaToolBar/Media.png')],
-  isOwnTweet: true,
+const publicUrlFor = (path?: string | null) => {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
+  return data?.publicUrl ?? undefined;
 };
-
-const otherTweet: TweetCardProps = {
-  id: 'other',
-  displayName: 'karennne',
-  username: 'karenne',
-  time: '09:28 · 2/21/20',
-  text: '~~ hiring for a UX Lead in Sydney - who should I talk to?',
-  counts: { replies: 4, retweets: 6, likes: 15, shares: 1 },
-  isOwnTweet: false,
-};
-
-const replies: TweetCardProps[] = [
-  {
-    id: 'r1',
-    displayName: 'kiero_d',
-    username: 'kiero_d',
-    time: '2d',
-    text: 'Replying to @karenne\nInteresting Nicola that not one reply or tag on this #UX talent shout out in the 24hrs since your tweet here......🤔',
-    counts: { replies: 1, retweets: 1, likes: 1, shares: 0 },
-  },
-  {
-    id: 'r2',
-    displayName: 'karenne',
-    username: 'karenne',
-    time: '2d',
-    text: 'Maybe I forgot the hashtags. #hiringux #designjobs #sydneyux #sydneydesigners #uxjobs',
-    counts: { replies: 1, retweets: 0, likes: 1, shares: 0 },
-  },
-];
 
 export default function TweetDetailScreen() {
-  const router = useRouter();
-  const { variant } = useLocalSearchParams<{ variant?: Variant }>();
-  const activeVariant: Variant = variant === 'mine' ? 'mine' : 'other';
-  const mainTweet = activeVariant === 'mine' ? mineTweet : otherTweet;
+  const params = useLocalSearchParams<{ id?: string }>();
+  const tweetId = typeof params.id === 'string' ? params.id : undefined;
 
-  const [liked, setLiked] = useState(false);
-  const [showRetweetSheet, setShowRetweetSheet] = useState(false);
-  const retweetCommentUri = useMemo(
-    () => Asset.fromModule(require('@/assets/images/project_images/retweetWithComment.svg')).uri,
-    []
+  const session = useAppSelector((state) => state.auth.session);
+  const viewerId = session?.id ?? '';
+
+  const {
+    data: tweet,
+    isLoading: isTweetLoading,
+    refetch: refetchTweet,
+  } = useGetTweetDetailQuery(tweetId!, { skip: !tweetId });
+  const {
+    data: replies = [],
+    isLoading: isRepliesLoading,
+    refetch: refetchReplies,
+  } = useGetRepliesQuery(tweetId!, { skip: !tweetId });
+
+  const tweetIds = useMemo(() => {
+    const ids: string[] = [];
+    if (tweet?.id) ids.push(tweet.id);
+    replies?.forEach((item: any) => {
+      if (item?.id) ids.push(item.id);
+    });
+    return ids;
+  }, [tweet?.id, replies]);
+
+  const { data: likedData = [], refetch: refetchLikes } = useGetUserLikesForTweetsQuery(
+    { tweetIds, userId: viewerId },
+    { skip: !viewerId || tweetIds.length === 0 }
+  );
+  const { data: retweetedData = [], refetch: refetchRetweets } = useGetUserRetweetsForTweetsQuery(
+    { tweetIds, userId: viewerId },
+    { skip: !viewerId || tweetIds.length === 0 }
+  );
+  const { data: bookmarkedData = [], refetch: refetchBookmarks } = useGetUserBookmarksForTweetsQuery(
+    { tweetIds, userId: viewerId },
+    { skip: !viewerId || tweetIds.length === 0 }
   );
 
-  const ListHeader = () => (
-    <View>
-      <TweetCard {...mainTweet} containerStyle={styles.tweetCard} hideEngagement />
-      <View style={styles.timeRow}>
-        <Text style={styles.timeText}>{mainTweet.time} · </Text>
-        <Text style={styles.timeLink}>Twitter Web App</Text>
-      </View>
-      <View style={styles.divider} />
+  const [likeTweet] = useLikeTweetMutation();
+  const [unlikeTweet] = useUnlikeTweetMutation();
+  const [retweet] = useRetweetMutation();
+  const [unretweet] = useUnretweetMutation();
+  const [bookmark] = useBookmarkMutation();
+  const [unbookmark] = useUnbookmarkMutation();
 
-      {activeVariant === 'mine' && (
-        <>
-          <View style={styles.sectionRow}>
-            <BarChart3 size={16} color="#657786" />
-            <Text style={[styles.metaText, { marginLeft: 8 }]}>View Tweet activity</Text>
-          </View>
-          <View style={styles.divider} />
-        </>
-      )}
+  const repliesCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    replies?.forEach((reply: any) => {
+      const parentId = reply?.parent_tweet_id;
+      if (!parentId) return;
+      map.set(parentId, (map.get(parentId) ?? 0) + 1);
+    });
+    return map;
+  }, [replies]);
 
-      <View style={styles.countsRow}>
-        <Text style={styles.countText}>
-          <Text style={styles.countNumber}>{mainTweet.counts.retweets}</Text> Retweets
-        </Text>
-        <Text style={[styles.countText, { marginLeft: 12 }]}>
-          <Text style={styles.countNumber}>{mainTweet.counts.likes}</Text> Likes
-        </Text>
-      </View>
-      <View style={styles.divider} />
-
-      <View style={styles.engagementRow}>
-        <MessageCircle size={20} color="#657786" />
-        <Pressable hitSlop={8} onPress={() => setShowRetweetSheet(true)}>
-          <Repeat2 size={20} color="#657786" />
-        </Pressable>
-        <Pressable
-          hitSlop={8}
-          onPress={() => setLiked((prev) => !prev)}
-          style={styles.engagementPress}
-        >
-          <Heart size={20} color={liked ? '#CE395F' : '#657786'} fill={liked ? '#CE395F' : 'none'} />
-        </Pressable>
-        <Pressable
-          hitSlop={8}
-          onPress={async () => {
-            try {
-              await Share.share({ message: mainTweet.text });
-            } catch {
-              /* noop */
-            }
-          }}
-        >
-          <Upload size={20} color="#657786" />
-        </Pressable>
-      </View>
-      <View style={styles.divider} />
-    </View>
+  const likedSet = useMemo(
+    () => new Set<string>(likedData.map((row: any) => row.tweet_id)),
+    [likedData]
   );
+  const retweetedSet = useMemo(
+    () => new Set<string>(retweetedData.map((row: any) => row.tweet_id)),
+    [retweetedData]
+  );
+  const bookmarkedSet = useMemo(
+    () => new Set<string>(bookmarkedData.map((row: any) => row.tweet_id)),
+    [bookmarkedData]
+  );
+
+  const refreshAll = useCallback(() => {
+    refetchTweet();
+    refetchReplies();
+    refetchLikes?.();
+    refetchRetweets?.();
+    refetchBookmarks?.();
+  }, [refetchBookmarks, refetchLikes, refetchReplies, refetchRetweets, refetchTweet]);
+
+  const handleLikeToggle = useCallback(
+    async (targetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await likeTweet({ tweetId: targetId, userId: viewerId }).unwrap();
+        } else {
+          await unlikeTweet({ tweetId: targetId, userId: viewerId }).unwrap();
+        }
+        refreshAll();
+      } catch (error) {
+        console.warn('Failed to toggle like', error);
+      }
+    },
+    [likeTweet, refreshAll, unlikeTweet, viewerId]
+  );
+
+  const handleRetweetToggle = useCallback(
+    async (targetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await retweet({ tweetId: targetId, userId: viewerId }).unwrap();
+        } else {
+          await unretweet({ tweetId: targetId, userId: viewerId }).unwrap();
+        }
+        refreshAll();
+      } catch (error) {
+        console.warn('Failed to toggle retweet', error);
+      }
+    },
+    [refreshAll, retweet, unretweet, viewerId]
+  );
+
+  const handleBookmarkToggle = useCallback(
+    async (targetId: string, next: boolean) => {
+      if (!viewerId) return;
+      try {
+        if (next) {
+          await bookmark({ tweetId: targetId, userId: viewerId }).unwrap();
+        } else {
+          await unbookmark({ tweetId: targetId, userId: viewerId }).unwrap();
+        }
+        refreshAll();
+      } catch (error) {
+        console.warn('Failed to toggle bookmark', error);
+      }
+    },
+    [bookmark, refreshAll, unbookmark, viewerId]
+  );
+
+  const mapTweet = useCallback(
+    (item: any) => {
+      const profile = item?.profiles;
+      const avatarUrl = publicUrlFor(profile?.avatar_url);
+      const media = (item?.tweet_media ?? [])
+        .map((m: any) => {
+          const uri = publicUrlFor(m.storage_path);
+          if (!uri) return null;
+          const poster = m.thumbnail_url ? publicUrlFor(m.thumbnail_url) : undefined;
+          return {
+            type: m.media_type === 'video' ? 'video' : 'image',
+            source: { uri },
+            poster: poster ? { uri: poster } : undefined,
+          };
+        })
+        .filter(Boolean);
+
+      return {
+        id: item.id,
+        displayName: profile?.display_name ?? 'Unknown',
+        username: profile?.username ?? 'unknown',
+        avatarUrl,
+        verified: profile?.is_verified ?? false,
+        time: new Date(item.created_at).toLocaleString(),
+        text: item.body,
+        media,
+        counts: {
+          replies: repliesCountMap.get(item.id) ?? 0,
+          retweets: item.tweet_retweets?.[0]?.count ?? 0,
+          likes: item.tweet_likes?.[0]?.count ?? 0,
+          shares: item.tweet_bookmarks?.[0]?.count ?? 0,
+        },
+        isOwnTweet: item.author_id === viewerId,
+        initialLiked: likedSet.has(item.id),
+        initialRetweeted: retweetedSet.has(item.id),
+        initialBookmarked: bookmarkedSet.has(item.id),
+      } as const;
+    },
+    [bookmarkedSet, likedSet, repliesCountMap, retweetedSet, viewerId]
+  );
+
+  const renderTweet = useCallback(
+    (item: any) => {
+      const mapped = mapTweet(item);
+      return (
+        <TweetCard
+          {...mapped}
+          showThread={false}
+          onLikeToggle={(next) => handleLikeToggle(mapped.id ?? '', next)}
+          onRetweetToggle={(next) => handleRetweetToggle(mapped.id ?? '', next)}
+          onBookmarkToggle={(next) => handleBookmarkToggle(mapped.id ?? '', next)}
+        />
+      );
+    },
+    [handleBookmarkToggle, handleLikeToggle, handleRetweetToggle, mapTweet]
+  );
+
+  if (!tweetId) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={{ width: 22 }} />
+          <Text style={styles.headerTitle}>Tweet</Text>
+          <View style={{ width: 22 }} />
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No tweet id provided.</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable hitSlop={8} onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/home'))}>
-          <ChevronLeft size={22} color="#4C9EEB" />
-        </Pressable>
         <Text style={styles.headerTitle}>Tweet</Text>
-        <View style={{ width: 22 }} />
       </View>
-
-      <FlatList
-        data={activeVariant === 'mine' ? [] : replies}
-        keyExtractor={(item) => item.id as string}
-        ListHeaderComponent={<ListHeader />}
-        renderItem={({ item }) => (
-          <TweetCard {...item} containerStyle={styles.replyCard} onPressThread={undefined} showThread={false} />
-        )}
-        ListEmptyComponent={
-          activeVariant === 'mine' ? <View style={styles.emptyReplies} /> : null
-        }
-        contentContainerStyle={{ paddingBottom: 200 }}
-      />
-      <View style={styles.replyBar}>
-        <Avatar source={require('@/assets/images/project_images/p1.png')} name="You" size={34} />
-        <Text style={styles.composerPlaceholder}>
-          {activeVariant === 'mine' ? 'Add another Tweet' : 'Tweet your reply'}
-        </Text>
-      </View>
-      <Modal transparent visible={showRetweetSheet} animationType="fade" onRequestClose={() => setShowRetweetSheet(false)}>
-        <View style={styles.sheetOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowRetweetSheet(false)} />
-          <View style={styles.sheetContainer}>
-            <View style={styles.sheetHandle} />
-            <Pressable style={styles.sheetRow} onPress={() => setShowRetweetSheet(false)} android_ripple={{ color: '#E7ECF0' }}>
-              <Repeat2 size={22} color="#657786" />
-              <Text style={styles.sheetRowText}>Retweet</Text>
-            </Pressable>
-            <Pressable style={styles.sheetRow} onPress={() => setShowRetweetSheet(false)} android_ripple={{ color: '#E7ECF0' }}>
-              <SvgUri uri={retweetCommentUri} width={22} height={22} />
-              <Text style={styles.sheetRowText}>Retweet with comment</Text>
-            </Pressable>
-            <Pressable style={styles.sheetCancel} onPress={() => setShowRetweetSheet(false)}>
-              <Text style={styles.sheetCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
+      {isTweetLoading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator />
         </View>
-      </Modal>
+      ) : (
+        <FlatList
+          data={replies}
+          keyExtractor={(item) => item.id as string}
+          renderItem={({ item }) => (
+            <View style={styles.replyCard}>{renderTweet(item)}</View>
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={isTweetLoading || isRepliesLoading}
+              onRefresh={refreshAll}
+            />
+          }
+          ListHeaderComponent={
+            tweet ? (
+              <View>
+                {renderTweet(tweet)}
+                <View style={styles.divider} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            isRepliesLoading ? (
+              <View style={styles.loading}>
+                <ActivityIndicator />
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No replies yet.</Text>
+              </View>
+            )
+          }
+          contentContainerStyle={{ paddingBottom: 160 }}
+        />
+      )}
     </View>
   );
 }
@@ -181,148 +283,32 @@ const styles = StyleSheet.create({
     height: 90,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E1E8ED',
   },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#0F1419' },
-  tweetCard: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
-    marginBottom: 8,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  timeText: {
-    fontSize: 14,
-    color: '#657786',
-  },
-  timeLink: {
-    fontSize: 14,
-    color: '#4C9EEB',
-    fontWeight: '500',
-  },
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  metaText: {
-    fontSize: 15,
-    color: '#0F1419',
-  },
-  countsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  countText: {
-    fontSize: 14,
-    color: '#657786',
-  },
-  countNumber: {
-    color: '#0F1419',
-    fontWeight: '700',
-  },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: '#E1E8ED',
     marginHorizontal: 16,
+    marginVertical: 8,
   },
   replyCard: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E1E8ED',
   },
-  engagementRow: {
-    height: 44,
-    flexDirection: 'row',
+  loading: {
+    padding: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 60,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 360,
-    marginTop: 4,
-    marginBottom: 8,
+    justifyContent: 'center',
   },
-  engagementPress: {
-    padding: 4,
-  },
-  emptyReplies: {
-    minHeight: 200,
-    backgroundColor: '#E7ECF0',
-  },
-  replyBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
+  emptyState: {
+    padding: 24,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E1E8ED',
-    columnGap: 12,
   },
-  composerPlaceholder: {
-    flex: 1,
+  emptyText: {
     color: '#657786',
-    fontSize: 15,
-    backgroundColor: '#F2F4F5',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-  },
-  sheetOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: 24,
-    paddingTop: 8,
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CED5DC',
-    marginBottom: 4,
-  },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  sheetRowText: {
-    marginLeft: 14,
-    fontSize: 17,
-    color: '#0F1419',
-  },
-  sheetCancel: {
-    marginTop: 4,
-    marginHorizontal: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 999,
-    backgroundColor: '#E7ECF0',
-  },
-  sheetCancelText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#0F1419',
   },
 });

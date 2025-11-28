@@ -1,20 +1,44 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import MediaToolBar from '@/src/components/features/New/MediaToolBar';
 import NewTweetHeader from '@/src/components/features/New/NewTweetHeader';
 import Avatar from '@/src/components/primitives/Header/avatar';
+import { useAppSelector } from '@/src/hooks/useRedux';
+import { useCreateTweetMutation } from '@/src/store/services/tweetsApi';
 
 export default function NewTweet() {
   const router = useRouter();
+  const session = useAppSelector((state) => state.auth.session);
   const [text, setText] = useState('');
+  const [createTweet, { isLoading } ] = useCreateTweetMutation();
+
+  const avatarSource = useMemo(() => {
+    const metadataAvatar = (session as any)?.user_metadata?.avatar_url as string | undefined;
+    if (metadataAvatar) {
+      return { uri: metadataAvatar };
+    }
+    return require('@/assets/images/project_images/p1.png');
+  }, [session]);
 
   const goBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(app)/home');
+    }
+  };
+
+  const handleTweet = async () => {
+    const body = text.trim();
+    if (!body || !session?.id || isLoading) return;
+    try {
+      await createTweet({ author_id: session.id, body }).unwrap();
+      setText('');
+      goBack();
+    } catch (error) {
+      console.warn('Failed to post tweet', error);
     }
   };
 
@@ -26,13 +50,13 @@ export default function NewTweet() {
     >
       <NewTweetHeader
         onCancel={goBack}
-        onTweet={goBack}
-        tweetDisabled={!text.trim()}
+        onTweet={handleTweet}
+        tweetDisabled={!text.trim() || !session || isLoading}
         title="New Tweet"
       />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.row}>
-          <Avatar source={require('@/assets/images/project_images/p1.png')} name="You" size={37} style={styles.avatar} />
+          <Avatar source={avatarSource} name="You" size={37} style={styles.avatar} />
           <TextInput
             placeholder="What's happening?"
             placeholderTextColor="#657786"
